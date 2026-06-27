@@ -1,0 +1,64 @@
+name: Vietnam Intelligence Collector
+
+on:
+  schedule:
+    # Chạy mỗi 1 tiếng — UTC (GitHub Actions dùng UTC)
+    # ICT = UTC+7, nên 00:00 ICT = 17:00 UTC hôm trước
+    - cron: '0 * * * *'
+
+  # Cho phép chạy thủ công từ GitHub UI (nút "Run workflow")
+  workflow_dispatch:
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    permissions:
+      contents: write   # Cần quyền để commit file output
+
+    steps:
+      # 1. Checkout repo
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # 2. Setup Python
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # 3. Chạy collector (không cần cài thêm package — dùng stdlib)
+      - name: Run collector
+        run: python collector.py
+
+      # 4. Commit và push file output về repo
+      - name: Commit output files
+        run: |
+          git config user.name "Vietnam Intelligence Bot"
+          git config user.email "bot@vietnam-intelligence"
+          git add output/
+
+          # Chỉ commit nếu có thay đổi thực sự
+          if git diff --staged --quiet; then
+            echo "Không có thay đổi, bỏ qua commit"
+          else
+            TIMESTAMP=$(TZ='Asia/Ho_Chi_Minh' date '+%Y-%m-%d %H:%M ICT')
+            git commit -m "📊 Auto collect: $TIMESTAMP"
+            git push
+          fi
+
+      # 5. Hiển thị tóm tắt trong GitHub Actions log
+      - name: Summary
+        if: always()
+        run: |
+          echo "## 🇻🇳 Vietnam Intelligence Collector" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Thời gian:** $(TZ='Asia/Ho_Chi_Minh' date '+%Y-%m-%d %H:%M ICT')" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Files output:**" >> $GITHUB_STEP_SUMMARY
+          ls output/**/*.md 2>/dev/null | tail -5 | while read f; do
+            echo "- \`$f\`" >> $GITHUB_STEP_SUMMARY
+          done
