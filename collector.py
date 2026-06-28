@@ -235,6 +235,102 @@ def get_oil_price() -> dict:
     return result
 
 
+def get_vnindex() -> dict:
+    """VNIndex + HNX-Index từ SSI iBoard API (public, không cần key)"""
+    result = {
+        "vnindex": None, "vnindex_change": None, "vnindex_pct": None,
+        "hnx": None, "hnx_change": None,
+        "total_value_bn": None,   # Tổng giá trị khớp lệnh HOSE (tỷ đồng)
+        "foreign_net_bn": None,   # Khối ngoại mua ròng HOSE (tỷ đồng)
+        "source": "", "error": ""
+    }
+
+    # Nguồn 1: SSI iBoard public API — index snapshot
+    try:
+        url = "https://iboard-query.ssi.com.vn/v2/stock/index/VNINDEX"
+        req = urllib.request.Request(url, headers={
+            "User-Agent": "Mozilla/5.0",
+            "Accept": "application/json",
+            "Origin": "https://iboard.ssi.com.vn",
+            "Referer": "https://iboard.ssi.com.vn/",
+        })
+        with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT) as resp:
+            raw = resp.read()
+        if raw[:2] == b"\x1f\x8b": raw = gzip.decompress(raw)
+        data = json.loads(raw.decode("utf-8", errors="replace"))
+        d = data.get("data", data)
+        if isinstance(d, list): d = d[0] if d else {}
+        if d.get("indexValue"):
+            result["vnindex"]       = float(d.get("indexValue", 0))
+            result["vnindex_change"]= float(d.get("indexChange", 0))
+            result["vnindex_pct"]   = float(d.get("percentChange", 0))
+            result["total_value_bn"]= round(float(d.get("totalValue", 0)) / 1e9, 0)
+            result["source"] = "SSI iBoard"
+            # Lấy thêm HNX
+            try:
+                url2 = "https://iboard-query.ssi.com.vn/v2/stock/index/HNXIndex"
+                req2 = urllib.request.Request(url2, headers={
+                    "User-Agent": "Mozilla/5.0",
+                    "Accept": "application/json",
+                    "Origin": "https://iboard.ssi.com.vn",
+                    "Referer": "https://iboard.ssi.com.vn/",
+                })
+                with urllib.request.urlopen(req2, timeout=10) as resp2:
+                    raw2 = resp2.read()
+                if raw2[:2] == b"\x1f\x8b": raw2 = gzip.decompress(raw2)
+                d2 = json.loads(raw2.decode("utf-8", errors="replace"))
+                d2 = d2.get("data", d2)
+                if isinstance(d2, list): d2 = d2[0] if d2 else {}
+                if d2.get("indexValue"):
+                    result["hnx"]        = float(d2.get("indexValue", 0))
+                    result["hnx_change"] = float(d2.get("indexChange", 0))
+            except: pass
+            return result
+    except Exception as e:
+        result["_ssi_err"] = str(e)[:80]
+
+    # Nguồn 2: TCBS public market summary
+    try:
+        url3 = "https://apipubaws.tcbs.com.vn/stock-insight/v1/index/VNIndex"
+        req3 = urllib.request.Request(url3, headers={
+            "User-Agent": "Mozilla/5.0",
+            "Accept": "application/json",
+        })
+        with urllib.request.urlopen(req3, timeout=REQUEST_TIMEOUT) as resp3:
+            raw3 = resp3.read()
+        if raw3[:2] == b"\x1f\x8b": raw3 = gzip.decompress(raw3)
+        d3 = json.loads(raw3.decode("utf-8", errors="replace"))
+        if d3.get("indexValue"):
+            result["vnindex"]        = float(d3.get("indexValue", 0))
+            result["vnindex_change"] = float(d3.get("change", 0))
+            result["vnindex_pct"]    = float(d3.get("percentChange", 0))
+            result["source"]         = "TCBS API"
+            return result
+    except Exception as e2:
+        result["_tcbs_err"] = str(e2)[:80]
+
+    # Nguồn 3: Jina đọc CafeF bảng giá (fallback)
+    try:
+        jina_url = JINA_BASE + "https://cafef.vn/thi-truong-chung-khoan.chn"
+        req4 = urllib.request.Request(jina_url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req4, timeout=REQUEST_TIMEOUT) as resp4:
+            raw4 = resp4.read()
+        if raw4[:2] == b"\x1f\x8b": raw4 = gzip.decompress(raw4)
+        text4 = raw4.decode("utf-8", errors="replace")
+        # Tìm pattern VNIndex trong text
+        m = __import__("re").search(
+            r"VN[\-\s]?Index[^\d]*(\d[\d,.]+)", text4, __import__("re").IGNORECASE)
+        if m:
+            result["vnindex"] = float(m.group(1).replace(",",""))
+            result["source"]  = "CafeF Jina (fallback)"
+            return result
+    except Exception as e3:
+        result["_jina_err"] = str(e3)[:80]
+
+    result["error"] = "Không lấy được VNIndex — thị trường đóng cửa hoặc API lỗi"
+    return result
+
+
 def get_fed_rate() -> dict:
     """Fed Funds Rate — FRED CSV với xử lý gzip/encoding đúng"""
     result = {"rate": None, "date": None, "source": "", "error": ""}
@@ -314,9 +410,11 @@ def get_fed_rate() -> dict:
     result["error"] = "Fed rate: thất bại tất cả nguồn"
     return result
 def get_us_cpi() -> dict:
-    """US CPI YoY — BLS public API với xử lý gzip đúng"""
-    result = {"cpi_yoy": None, "period": None, "source": "", "error": ""}
+    """US CPI YoY — tính đúng: (index_now - index_12m_ago) / index_12m_ago * 100"""
+    result = {"cpi_yoy": None, "cpi_index": None, "period": None,
+              "source": "", "error": ""}
 
+    # BLS API v1 trả về CPI Index level (không phải %) — cần lấy 13 điểm để tính YoY
     url = "https://api.bls.gov/publicAPI/v1/timeseries/data/CUUR0000SA0"
     req = urllib.request.Request(url, headers={
         "User-Agent": "Mozilla/5.0",
@@ -326,7 +424,6 @@ def get_us_cpi() -> dict:
     try:
         with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT) as resp:
             raw = resp.read()
-        # Fix lỗi 0x8b — BLS gzip response dù không yêu cầu
         if raw[:2] == b"\x1f\x8b":
             raw = gzip.decompress(raw)
         elif raw[:2] in (b"\x78\x9c", b"\x78\x01", b"\x78\xda"):
@@ -334,15 +431,30 @@ def get_us_cpi() -> dict:
         data = json.loads(raw.decode("utf-8", errors="replace"))
         series = data.get("Results", {}).get("series", [])
         if series and series[0].get("data"):
-            latest = series[0]["data"][0]
-            result["cpi_yoy"] = latest.get("value")
-            result["period"]  = f"{latest.get('periodName')} {latest.get('year')}"
-            result["source"]  = "BLS.gov"
-            return result
+            rows = series[0]["data"]
+            # rows được sort DESC (mới nhất trước)
+            if len(rows) >= 13:
+                latest     = rows[0]   # tháng mới nhất
+                year_ago   = rows[12]  # cùng tháng năm trước
+                idx_now    = float(latest.get("value", 0))
+                idx_ago    = float(year_ago.get("value", 1))
+                yoy        = round((idx_now - idx_ago) / idx_ago * 100, 2)
+                result["cpi_yoy"]   = yoy
+                result["cpi_index"] = idx_now
+                result["period"]    = f"{latest.get('periodName')} {latest.get('year')}"
+                result["source"]    = "BLS.gov (YoY tính từ index)"
+                return result
+            elif rows:
+                # Chỉ có 1 điểm — lưu index, báo thiếu YoY
+                latest = rows[0]
+                result["cpi_index"] = float(latest.get("value", 0))
+                result["period"]    = f"{latest.get('periodName')} {latest.get('year')}"
+                result["error"]     = "Thiếu data 12 tháng để tính YoY"
+                result["source"]    = "BLS.gov"
+                return result
     except Exception as e:
         result["error"] = str(e)[:80]
 
-    # Fallback: Trading Economics CPI page (Jina)
     result["error"] = result.get("error", "") + " | BLS API lỗi"
     return result
 def get_us_jobs() -> dict:
@@ -706,8 +818,36 @@ def build_markdown(api_data: dict, rss_data: dict,
             "",
         ]
 
+    # ── VNIndex block ──────────────────────────────────────────────────
+    vi = api_data.get("vnindex", {})
+    if vi.get("vnindex"):
+        chg   = float(vi.get("vnindex_change") or 0)
+        pct   = float(vi.get("vnindex_pct") or 0)
+        sign  = "+" if chg >= 0 else ""
+        arrow = "🟢" if chg >= 0 else "🔴"
+        lines += [
+            "### 📈 VNIndex & TTCK Việt Nam",
+            "| Chỉ số | Điểm | Thay đổi | Nguồn |",
+            "|---|---|---|---|",
+            f"| **VNIndex** | **{fmt_num(vi['vnindex'],2,'')}** | {arrow} {sign}{fmt_num(chg,2,'')} ({sign}{fmt_num(pct,2,'%')}) | {vi.get('source','N/A')} |",
+        ]
+        if vi.get("hnx"):
+            hchg  = float(vi.get("hnx_change") or 0)
+            harr  = "🟢" if hchg >= 0 else "🔴"
+            hsign = "+" if hchg >= 0 else ""
+            lines.append(f"| HNX-Index | {fmt_num(vi['hnx'],2,'')} | {harr} {hsign}{fmt_num(hchg,2,'')} | {vi.get('source','N/A')} |")
+        if vi.get("total_value_bn"):
+            lines.append(f"| Giá trị khớp lệnh HOSE | {fmt_num(vi['total_value_bn'],0,' tỷ đồng')} | — | — |")
+        lines.append("")
+    else:
+        lines += [
+            "### 📈 VNIndex & TTCK Việt Nam",
+            f"> ⚠️ VNIndex: {vi.get('error', 'Không lấy được — thị trường có thể đóng cửa')}",
+            "",
+        ]
+
     # Ghi chú lỗi API nếu có
-    for key, label in [("gold","Vàng"),("fx","Tỷ giá"),("fed","Fed"),("cpi","CPI"),("jobs","Jobs")]:
+    for key, label in [("gold","Vàng"),("fx","Tỷ giá"),("fed","Fed"),("cpi","CPI"),("jobs","Jobs"),("vnindex","VNIndex")]:
         d = api_data.get(key,{})
         if d.get("error"):
             lines.append(f"> ⚠️ {label}: {d['error']}")
@@ -859,6 +999,17 @@ def main():
 
     print("  [API] Giá dầu...")
     api_data["oil"] = get_oil_price()
+
+    print("  [API] VNIndex + HNX-Index...")
+    api_data["vnindex"] = get_vnindex()
+    vi = api_data["vnindex"]
+    if vi.get("vnindex"):
+        chg = vi.get("vnindex_change", 0) or 0
+        pct = vi.get("vnindex_pct", 0) or 0
+        sign = "+" if chg >= 0 else ""
+        print(f"        VNIndex = {vi['vnindex']:.2f} ({sign}{chg:.2f} | {sign}{pct:.2f}%)")
+    else:
+        print(f"        VNIndex = N/A ({vi.get('error','')})")
 
     # Load timestamp lần chạy trước
     last_run_utc = load_last_run()
