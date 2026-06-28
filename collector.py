@@ -19,6 +19,76 @@ MAX_ITEMS_RSS     = 8
 MAX_CHARS_ARTICLE = 4000
 JINA_BASE         = "https://r.jina.ai/"
 
+LAST_RUN_FILE     = Path("output/last_run.txt")   # Lưu timestamp lần chạy trước
+
+
+# ── Hàm xử lý thời gian ──────────────────────────────────────────────────────
+
+def load_last_run() -> datetime.datetime:
+    """Đọc timestamp lần chạy trước từ file. Nếu chưa có → trả về 1 tiếng trước."""
+    try:
+        if LAST_RUN_FILE.exists():
+            ts_str = LAST_RUN_FILE.read_text(encoding="utf-8").strip()
+            return datetime.datetime.fromisoformat(ts_str)
+    except Exception:
+        pass
+    # Lần đầu chạy hoặc file bị lỗi → lấy tin trong 1 tiếng qua
+    utc_now = datetime.datetime.utcnow()
+    return utc_now - datetime.timedelta(hours=1)
+
+
+def save_last_run(utc_now: datetime.datetime):
+    """Lưu timestamp UTC hiện tại để lần sau dùng làm cutoff."""
+    LAST_RUN_FILE.parent.mkdir(parents=True, exist_ok=True)
+    LAST_RUN_FILE.write_text(utc_now.isoformat(), encoding="utf-8")
+
+
+def parse_pubdate(raw: str) -> datetime.datetime | None:
+    """Parse pubDate RSS / ISO 8601 → datetime UTC. Trả None nếu không parse được."""
+    if not raw:
+        return None
+    raw = raw.strip()
+
+    # Thử các format phổ biến
+    formats = [
+        "%a, %d %b %Y %H:%M:%S %z",   # RFC 2822: "Sat, 28 Jun 2026 06:00:00 +0700"
+        "%a, %d %b %Y %H:%M:%S %Z",   # RFC 2822 với tz name: "... GMT"
+        "%Y-%m-%dT%H:%M:%S%z",        # ISO 8601: "2026-06-28T06:00:00+07:00"
+        "%Y-%m-%dT%H:%M:%SZ",         # ISO UTC: "2026-06-28T06:00:00Z"
+        "%Y-%m-%dT%H:%M:%S.%f%z",     # ISO with microseconds
+        "%Y-%m-%d %H:%M:%S",          # Simple
+        "%Y-%m-%d",                    # Date only
+    ]
+
+    for fmt in formats:
+        try:
+            dt = datetime.datetime.strptime(raw, fmt)
+            # Chuẩn hóa về UTC
+            if dt.tzinfo is not None:
+                dt = dt.utctimetuple()
+                dt = datetime.datetime(*dt[:6])
+            return dt
+        except ValueError:
+            continue
+
+    # Fallback: thử email.utils (xử lý RFC 2822 linh hoạt hơn)
+    try:
+        import email.utils
+        ts = email.utils.parsedate_to_datetime(raw)
+        return ts.replace(tzinfo=None) - ts.utcoffset() if ts.utcoffset() else ts.replace(tzinfo=None)
+    except Exception:
+        pass
+
+    return None
+
+
+def is_new_item(published_str: str, last_run_utc: datetime.datetime) -> bool:
+    """Kiểm tra tin có mới hơn last_run không. Nếu không parse được date → giữ lại (an toàn)."""
+    dt = parse_pubdate(published_str)
+    if dt is None:
+        return True   # Không parse được → giữ lại để không bỏ sót
+    return dt > last_run_utc
+
 RSS_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
@@ -366,6 +436,15 @@ RSS_SOURCES = [
     {"group": 3, "name": "Nhịp cầu đầu tư",            "jina": "https://nhipcaudautu.vn/"},
     {"group": 3, "name": "Tin nhanh chứng khoán",      "jina": "https://tinnhanhchungkhoan.vn/"},
 
+    # ── Người Quan Sát (nguoiquansat.vn) — tài chính đầu tư VN ──
+    # Jina vì OneCMS không có public RSS — trang load được tốt
+    {"group": 3,  "name": "NQS Chứng khoán",           "jina": "https://nguoiquansat.vn/chung-khoan"},
+    {"group": 3,  "name": "NQS Doanh nghiệp",          "jina": "https://nguoiquansat.vn/doanh-nghiep"},
+    {"group": 3,  "name": "NQS Vĩ mô",                 "jina": "https://nguoiquansat.vn/vi-mo"},
+    {"group": 11, "name": "NQS Tài chính Ngân hàng",   "jina": "https://nguoiquansat.vn/tai-chinh-ngan-hang"},
+    {"group": 12, "name": "NQS Vàng - Tỷ giá",         "jina": "https://nguoiquansat.vn/tai-chinh-ngan-hang/vang-ty-gia"},
+    {"group": 2,  "name": "NQS Thế giới",               "jina": "https://nguoiquansat.vn/the-gioi"},
+
     # ── Chính phủ VN — Chỉ đạo điều hành (nhóm 10) ───────────────
     {"group":10, "name": "ChinhPhu Chỉ đạo điều hành", "jina": "https://chinhphu.vn/chi-dao-quyet-dinh-cua-chinh-phu-thu-tuong-chinh-phu"},
     {"group":10, "name": "ChinhPhu Thông cáo BC",       "jina": "https://baochinhphu.vn/thong-cao-bao-chi.htm"},
@@ -506,7 +585,8 @@ def fetch_jina_content(url: str) -> str:
         return f"[Lỗi Jina: {str(e)[:80]}]"
 
 
-def collect_all_rss() -> dict:
+def collect_all_rss(last_run_utc: datetime.datetime) -> dict:
+    """Thu thập RSS — chỉ giữ item MỚI hơn last_run_utc."""
     """Trả về dict {group_id: {sources: [...]}}"""
     by_group = {}
     for src in RSS_SOURCES:
@@ -531,18 +611,25 @@ def collect_all_rss() -> dict:
         print(f"  [RSS] {src['name']}...")
         items = fetch_rss(src["url"])
         result = {"name": src["name"], "mode": "RSS",
-                  "ok": False, "items": [], "important_count": 0}
+                  "ok": False, "items": [], "important_count": 0,
+                  "filtered_count": 0}
         if items and "error" not in items[0]:
             result["ok"] = True
             enriched = []
+            skipped  = 0
             for item in items:
+                # ── FILTER: chỉ giữ tin mới hơn last_run ──────
+                if not is_new_item(item.get("published", ""), last_run_utc):
+                    skipped += 1
+                    continue
                 full = ""
                 if is_important(item.get("title",""), item.get("summary","")):
                     full = fetch_full_article(item.get("link",""))
                     if full: result["important_count"] += 1; time.sleep(0.5)
                 item["full"] = full
                 enriched.append(item)
-            result["items"] = enriched
+            result["items"]         = enriched
+            result["filtered_count"] = skipped
         else:
             result["items"] = items
         by_group[gid]["sources"].append(result)
@@ -560,13 +647,18 @@ def fmt_num(v, decimals=2, suffix=""):
     except: return str(v)
 
 
-def build_markdown(api_data: dict, rss_data: dict, vn_now: datetime.datetime) -> str:
-    ts = vn_now.strftime("%Y-%m-%d %H:%M ICT")
+def build_markdown(api_data: dict, rss_data: dict,
+                   vn_now: datetime.datetime,
+                   last_run_ict: datetime.datetime | None = None) -> str:
+    ts       = vn_now.strftime("%Y-%m-%d %H:%M ICT")
+    last_str = last_run_ict.strftime("%Y-%m-%d %H:%M ICT") if last_run_ict else "N/A"
     lines = [
         "# 🇻🇳 Vietnam Intelligence Report",
         "",
-        f"> **Thời gian:** {ts}  ",
-        "> **Phiên bản:** v5 — API JSON (số liệu thực) + RSS (tin tức)  ",
+        f"> **Thời gian hiện tại:** {ts}  ",
+        f"> **Cập nhật từ:** {last_str}  ",
+        f"> **Window:** Chỉ tin TỨC MỚI trong khoảng [{last_str} → {ts}]  ",
+        "> **Phiên bản:** v5 — API JSON (số liệu thực) + RSS (chỉ tin mới)  ",
         "> **Dùng cho:** AI Investment Team",
         "",
         "---", "",
@@ -666,10 +758,16 @@ def build_markdown(api_data: dict, rss_data: dict, vn_now: datetime.datetime) ->
             else:
                 items = src.get("items", [])
                 if items and "error" not in items[0]:
-                    n  = len(items)
-                    ni = src.get("important_count", 0)
+                    n          = len(items)
+                    ni         = src.get("important_count", 0)
+                    n_filtered = src.get("filtered_count", 0)
                     total_items += n; total_imp += ni
-                    lines.append(f"*{n} tin*" + (f" — *{ni} tin quan trọng (đọc full)*" if ni else ""))
+                    skip_note = f" — bỏ qua {n_filtered} tin cũ" if n_filtered else ""
+                    if n == 0:
+                        lines.append(f"*Không có tin MỚI trong window này{skip_note}*")
+                    else:
+                        imp_note = f" — {ni} tin quan trọng (đọc full)" if ni else ""
+                        lines.append(f"*{n} tin MỚI{imp_note}{skip_note}*")
                     lines.append("")
                     for i, item in enumerate(items, 1):
                         t = item.get("title","")
@@ -762,18 +860,27 @@ def main():
     print("  [API] Giá dầu...")
     api_data["oil"] = get_oil_price()
 
-    # Thu thập RSS
-    print("\n[RSS] Thu thập tin tức...")
-    rss_data = collect_all_rss()
+    # Load timestamp lần chạy trước
+    last_run_utc = load_last_run()
+    last_run_ict = last_run_utc + datetime.timedelta(hours=TIMEZONE_OFFSET)
+    print(f"\n[Filter] Chỉ lấy tin MỚI sau: {last_run_ict.strftime('%Y-%m-%d %H:%M ICT')}")
+
+    # Thu thập RSS — chỉ lấy tin trong window [last_run → now]
+    print("\n[RSS] Thu thập tin tức (chỉ tin mới)...")
+    rss_data = collect_all_rss(last_run_utc)
 
     # Tạo file
     output_dir  = Path("output") / date_str
     output_dir.mkdir(parents=True, exist_ok=True)
     output_file = output_dir / f"{hour_str}.md"
 
-    md = build_markdown(api_data, rss_data, vn_now)
+    md = build_markdown(api_data, rss_data, vn_now, last_run_ict)
     output_file.write_text(md, encoding="utf-8")
     update_index(Path("output") / "INDEX.md", date_str, hour_str, vn_now)
+
+    # Lưu timestamp hiện tại → làm cutoff cho lần chạy tiếp theo
+    save_last_run(utc_now)
+    print(f"   Đã lưu last_run: {utc_now.isoformat()}")
 
     rss_ok = sum(
         sum(1 for s in g["sources"] if s["ok"])
