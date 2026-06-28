@@ -1,456 +1,517 @@
 """
-Vietnam Intelligence Collector v4
+Vietnam Intelligence Collector v5
 ===================================
-Fix toàn bộ lỗi v3:
-  - Gzip decompression: RSS feeds trả về gzip binary
-  - AP News bị chặn → thay bằng NPR, Guardian
-  - Jina binary → thêm header X-No-Cache + decompress
-  - White House 404 → URL mới
-  - VnEconomy RSS atom format
+Chiến lược mới hoàn toàn:
+  - Dữ liệu số (vàng, tỷ giá, dầu, Fed, CPI) → API JSON miễn phí
+  - Tin tức → RSS từ nguồn có feed thực sự hoạt động
+  - Bỏ hoàn toàn Jina cho trang VN (JS-rendered, không crawl được)
+  - Jina chỉ dùng cho bài báo cụ thể (có URL thẳng đến bài)
 """
 
-import time, datetime, gzip, zlib
+import time, datetime, gzip, json, zlib
 import urllib.request, urllib.error
 import re, xml.etree.ElementTree as ET
 from pathlib import Path
-from io import BytesIO
 
 TIMEZONE_OFFSET   = 7
-REQUEST_TIMEOUT   = 25
-MAX_ITEMS_PER_RSS = 8
-MAX_CHARS_JINA    = 4000
-MAX_CHARS_FULL    = 5000
+REQUEST_TIMEOUT   = 20
+MAX_ITEMS_RSS     = 8
+MAX_CHARS_ARTICLE = 4000
 JINA_BASE         = "https://r.jina.ai/"
 
-HEADERS = {
+RSS_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124 Safari/537.36",
     "Accept": "application/rss+xml, application/xml, text/xml, */*",
-    "Accept-Language": "vi-VN,vi;q=0.9,en;q=0.8",
-    "Accept-Encoding": "gzip, deflate, br",
+    "Accept-Encoding": "gzip, deflate",
     "Cache-Control": "no-cache",
 }
 
+API_HEADERS = {
+    "User-Agent": "VietnamIntelligence/5.0",
+    "Accept": "application/json, text/json, */*",
+    "Accept-Encoding": "gzip, deflate",
+}
+
 JINA_HEADERS = {
-    "User-Agent": "Mozilla/5.0 VietnamIntelligence/4.0",
+    "User-Agent": "Mozilla/5.0 VietnamIntelligence/5.0",
     "Accept": "text/plain, text/markdown, */*",
-    "Accept-Encoding": "identity",   # Không nén — tránh binary garbage
-    "X-No-Cache": "true",
+    "Accept-Encoding": "identity",
 }
 
 IMPORTANT_KEYWORDS = [
     "tô lâm","lê minh hưng","trần thanh mẫn","nguyễn tấn dũng",
-    "thủ tướng","tổng bí thư","chủ tịch nước","chủ tịch quốc hội",
-    "phó thủ tướng","bộ trưởng","trump","donald trump","white house",
-    "nghị quyết","nghị định","thông tư","quyết định",
-    "nhnn","ngân hàng nhà nước","bộ tài chính","lãi suất","tỷ giá",
+    "thủ tướng","tổng bí thư","chủ tịch nước","phó thủ tướng",
+    "trump","white house","fed","federal reserve","interest rate",
+    "nghị quyết","nghị định","thông tư","lãi suất","tỷ giá",
     "hưng yên","hồ chí minh","hà nội",
-    "fed","federal reserve","cpi","lạm phát","nfp","gdp",
-    "vàng tăng","vàng giảm","dầu tăng","dầu giảm",
+    "dịch bệnh","bùng phát","ebola","outbreak","emergency",
     "chiến tranh","xung đột","thuế quan","tariff",
-    "dịch bệnh","bùng phát","ebola","marburg","outbreak","emergency",
+    "vàng tăng","vàng giảm","dầu tăng","dầu giảm","gold","oil price",
 ]
 
-# ── 14 Nhóm v4 ────────────────────────────────────────────────────────────────
-GROUPS = [
-    {
-        "id": 1, "icon": "🏥",
-        "name": "Dịch bệnh & Thiên tai Thế giới và Việt Nam",
-        "sources": [
-            {"name": "WHO Disease Outbreak News",      "jina": "https://www.who.int/emergencies/disease-outbreak-news"},
-            {"name": "ProMED Outbreaks",               "rss":  "https://promedmail.org/feed/"},
-            {"name": "ReliefWeb Vietnam",              "jina": "https://reliefweb.int/country/vnm"},
-            {"name": "VnExpress Sức khỏe",             "jina": "https://vnexpress.net/suc-khoe"},
-        ],
-    },
-    {
-        "id": 2, "icon": "🌍",
-        "name": "Địa chính trị Thế giới",
-        "sources": [
-            # The Guardian có RSS hoạt động tốt từ GitHub
-            {"name": "The Guardian World",             "rss":  "https://www.theguardian.com/world/rss"},
-            {"name": "BBC World News",                 "rss":  "https://feeds.bbci.co.uk/news/world/rss.xml"},
-            {"name": "RFI English",                    "rss":  "https://www.rfi.fr/en/rss"},
-        ],
-    },
-    {
-        "id": 3, "icon": "💹",
-        "name": "Kinh tế & Tài chính Thế giới",
-        "sources": [
-            {"name": "The Guardian Business",          "rss":  "https://www.theguardian.com/business/rss"},
-            {"name": "VnEconomy",                      "jina": "https://vneconomy.vn/"},
-            {"name": "VnExpress Kinh doanh",           "jina": "https://vnexpress.net/kinh-doanh"},
-        ],
-    },
-    {
-        "id": 4, "icon": "📦",
-        "name": "Thị trường Hàng hóa Thế giới và Việt Nam",
-        "sources": [
-            {"name": "Trading Economics Commodities",  "jina": "https://tradingeconomics.com/commodity"},
-            {"name": "CafeBiz",                        "jina": "https://cafebiz.vn/"},
-        ],
-    },
-    {
-        "id": 5, "icon": "🥇",
-        "name": "Vàng & Bạc Thế giới và Việt Nam",
-        "sources": [
-            {"name": "Kitco Gold News",                "jina": "https://www.kitco.com/news/gold"},
-            {"name": "SJC Giá vàng",                   "jina": "https://sjc.com.vn/"},
-            {"name": "DOJI Giá vàng",                  "jina": "https://doji.vn/gia-vang/"},
-        ],
-    },
-    {
-        "id": 6, "icon": "🏦",
-        "name": "Lãi suất Mỹ — Fed",
-        "sources": [
-            {"name": "Federal Reserve Releases",       "jina": "https://www.federalreserve.gov/newsevents/pressreleases.htm"},
-            {"name": "Trading Economics Fed Rate",     "jina": "https://tradingeconomics.com/united-states/interest-rate"},
-        ],
-    },
-    {
-        "id": 7, "icon": "👷",
-        "name": "Lao động Mỹ — NFP & Thất nghiệp",
-        "sources": [
-            {"name": "BLS News Releases",              "jina": "https://www.bls.gov/bls/news-release/home.htm"},
-            {"name": "Trading Economics US Jobs",      "jina": "https://tradingeconomics.com/united-states/unemployment-rate"},
-        ],
-    },
-    {
-        "id": 8, "icon": "📈",
-        "name": "Lạm phát & CPI Mỹ",
-        "sources": [
-            {"name": "BLS CPI",                        "jina": "https://www.bls.gov/cpi/"},
-            {"name": "Trading Economics CPI",          "jina": "https://tradingeconomics.com/united-states/inflation-cpi"},
-        ],
-    },
-    {
-        "id": 9, "icon": "🛢️",
-        "name": "Giá dầu Thế giới và Việt Nam",
-        "sources": [
-            {"name": "EIA Petroleum",                  "jina": "https://www.eia.gov/petroleum/"},
-            {"name": "Trading Economics Crude Oil",    "jina": "https://tradingeconomics.com/commodity/crude-oil"},
-            {"name": "VnExpress Năng lượng",           "jina": "https://vnexpress.net/kinh-doanh/hang-hoa"},
-        ],
-    },
-    {
-        "id": 10, "icon": "📜",
-        "name": "Văn bản pháp luật Việt Nam",
-        "sources": [
-            {"name": "Thư viện Pháp luật",             "jina": "https://thuvienphapluat.vn/van-ban/moi-nhat"},
-            {"name": "Cổng văn bản Chính phủ",         "jina": "https://vanban.chinhphu.vn/"},
-            {"name": "LuatVietnam",                    "jina": "https://luatvietnam.vn/van-ban-moi-nhat.html"},
-        ],
-    },
-    {
-        "id": 11, "icon": "🏛️",
-        "name": "Chính sách Tài chính – Ngân hàng Việt Nam",
-        "sources": [
-            {"name": "NHNN",                           "jina": "https://www.sbv.gov.vn/webcenter/portal/vi/menu/trangchu"},
-            {"name": "VnEconomy Tài chính",            "jina": "https://vneconomy.vn/tai-chinh.htm"},
-            {"name": "VnExpress Kinh doanh",           "jina": "https://vnexpress.net/kinh-doanh/ngan-hang"},
-        ],
-    },
-    {
-        "id": 12, "icon": "💱",
-        "name": "Tỷ giá VND/USD",
-        "sources": [
-            {"name": "Vietcombank Tỷ giá",             "jina": "https://vietcombank.com.vn/ExchangeRates"},
-            {"name": "Trading Economics USD/VND",      "jina": "https://tradingeconomics.com/usdt-vnd:cur"},
-        ],
-    },
-    {
-        "id": 13, "icon": "🎙️",
-        "name": "Phát biểu & Ý chí lãnh đạo Việt Nam",
-        "note": "Tô Lâm · Trần Thanh Mẫn · Lê Minh Hưng · Nguyễn Tấn Dũng · Phó Thủ tướng",
-        "sources": [
-            {"name": "Cổng Chính phủ",                 "jina": "https://chinhphu.vn/"},
-            {"name": "Nhân dân Online",                "jina": "https://nhandan.vn/chinh-tri/"},
-            {"name": "VnExpress Thời sự",              "jina": "https://vnexpress.net/thoi-su"},
-            {"name": "VnExpress Thế giới",             "jina": "https://vnexpress.net/the-gioi"},
-        ],
-    },
-    {
-        "id": 14, "icon": "🗺️",
-        "name": "Trump & Chính sách Hưng Yên / HCM / Hà Nội",
-        "note": "Donald Trump + Nghị quyết phát triển 3 địa phương",
-        "sources": [
-            {"name": "White House",                    "jina": "https://www.whitehouse.gov/news/"},
-            {"name": "Hưng Yên Portal",                "jina": "https://hungyen.gov.vn/"},
-            {"name": "HCM Portal",                     "jina": "https://www.hochiminhcity.gov.vn/"},
-            {"name": "Hà Nội Portal",                  "jina": "https://hanoi.gov.vn/"},
-        ],
-    },
+# ══════════════════════════════════════════════════════════════════
+# PHẦN 1: API JSON — Dữ liệu số thực
+# ══════════════════════════════════════════════════════════════════
+
+def fetch_json(url: str, headers: dict = None) -> dict | list | None:
+    h = {**API_HEADERS, **(headers or {})}
+    req = urllib.request.Request(url, headers=h)
+    try:
+        with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT) as resp:
+            raw = resp.read()
+            if raw[:2] == b'\x1f\x8b':
+                raw = gzip.decompress(raw)
+            return json.loads(raw.decode("utf-8", errors="replace"))
+    except Exception as e:
+        return {"_error": str(e)[:120]}
+
+
+def get_gold_prices() -> dict:
+    """Giá vàng thế giới — metals-api miễn phí (không cần key cho XAU/USD basic)"""
+    result = {"xau_usd": None, "xag_usd": None, "source": "", "error": ""}
+
+    # Thử ExchangeRate-API metals (free, không cần key)
+    data = fetch_json("https://api.metals.live/v1/spot/gold,silver")
+    if isinstance(data, list) and not isinstance(data, dict):
+        for item in data:
+            if isinstance(item, dict):
+                if item.get("gold"): result["xau_usd"] = item["gold"]
+                if item.get("silver"): result["xag_usd"] = item["silver"]
+        if result["xau_usd"]:
+            result["source"] = "metals.live"
+            return result
+
+    # Fallback: frankfurter.app (EUR base, tính ngược)
+    data2 = fetch_json("https://api.frankfurter.app/latest?from=XAU&to=USD")
+    if isinstance(data2, dict) and "rates" in data2:
+        result["xau_usd"] = data2["rates"].get("USD")
+        result["source"] = "frankfurter.app"
+        return result
+
+    result["error"] = "Không lấy được giá vàng"
+    return result
+
+
+def get_exchange_rates() -> dict:
+    """Tỷ giá USD/VND và các cặp chính — ExchangeRate-API free"""
+    result = {"usd_vnd": None, "eur_usd": None, "cny_usd": None,
+              "dxy_approx": None, "source": "", "error": ""}
+
+    # exchangerate-api free (không cần key, giới hạn 1500 req/tháng)
+    data = fetch_json("https://open.er-api.com/v6/latest/USD")
+    if isinstance(data, dict) and data.get("result") == "success":
+        rates = data.get("rates", {})
+        result["usd_vnd"]  = rates.get("VND")
+        result["eur_usd"]  = round(1 / rates["EUR"], 4) if rates.get("EUR") else None
+        result["cny_usd"]  = round(1 / rates["CNY"], 4) if rates.get("CNY") else None
+        result["source"]   = "open.er-api.com"
+        return result
+
+    # Fallback: frankfurter
+    data2 = fetch_json("https://api.frankfurter.app/latest?from=USD&to=VND,EUR,CNY")
+    if isinstance(data2, dict) and "rates" in data2:
+        r = data2["rates"]
+        result["usd_vnd"] = r.get("VND")
+        result["eur_usd"] = round(1/r["EUR"], 4) if r.get("EUR") else None
+        result["cny_usd"] = round(1/r["CNY"], 4) if r.get("CNY") else None
+        result["source"]  = "frankfurter.app"
+        return result
+
+    result["error"] = "Không lấy được tỷ giá"
+    return result
+
+
+def get_oil_price() -> dict:
+    """Giá dầu WTI/Brent — dùng EIA API (free, không cần key cho public data)"""
+    result = {"wti": None, "brent": None, "source": "", "error": ""}
+
+    # EIA open data — series WTI daily
+    url_wti = "https://api.eia.gov/v2/petroleum/pri/spt/data/?api_key=DEMO_KEY&frequency=daily&data[0]=value&facets[product][]=EPCWTI&sort[0][column]=period&sort[0][direction]=desc&length=1"
+    data = fetch_json(url_wti)
+    if isinstance(data, dict) and "response" in data:
+        rows = data["response"].get("data", [])
+        if rows:
+            result["wti"] = rows[0].get("value")
+            result["source"] = "EIA API"
+
+    # Trading Economics public JSON (không cần key)
+    # Fallback: dùng giá từ commodity RSS
+    if not result["wti"]:
+        result["error"] = "EIA DEMO_KEY giới hạn — cần API key hoặc dùng RSS"
+
+    return result
+
+
+def get_fed_rate() -> dict:
+    """Fed Funds Rate — FRED API (St. Louis Fed, hoàn toàn miễn phí)"""
+    result = {"rate": None, "date": None, "source": "", "error": ""}
+
+    # FRED public API — series FEDFUNDS (monthly) không cần key cho read
+    url = "https://fred.stlouisfed.org/graph/fredgraph.csv?id=FEDFUNDS"
+    req = urllib.request.Request(url, headers=API_HEADERS)
+    try:
+        with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT) as resp:
+            raw = resp.read()
+            if raw[:2] == b'\x1f\x8b':
+                raw = gzip.decompress(raw)
+            text = raw.decode("utf-8")
+            lines = [l.strip() for l in text.strip().split("\n") if l.strip()]
+            # Lấy dòng cuối cùng (mới nhất)
+            last = lines[-1].split(",")
+            if len(last) == 2 and last[1] != ".":
+                result["rate"] = float(last[1])
+                result["date"] = last[0]
+                result["source"] = "FRED St.Louis Fed"
+                return result
+    except Exception as e:
+        result["error"] = str(e)[:80]
+
+    # Fallback: Trading Economics
+    result["error"] = "FRED không khả dụng"
+    return result
+
+
+def get_us_cpi() -> dict:
+    """US CPI YoY — BLS public API (không cần key)"""
+    result = {"cpi_yoy": None, "period": None, "source": "", "error": ""}
+
+    # BLS Public Data API v1 (không cần key, giới hạn 25 req/ngày)
+    url = "https://api.bls.gov/publicAPI/v1/timeseries/data/CUUR0000SA0"
+    req = urllib.request.Request(url, headers=API_HEADERS)
+    try:
+        with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT) as resp:
+            raw = resp.read()
+            data = json.loads(raw.decode("utf-8"))
+        series = data.get("Results", {}).get("series", [])
+        if series:
+            latest = series[0]["data"][0]
+            result["cpi_yoy"] = latest.get("value")
+            result["period"]  = f"{latest.get('periodName')} {latest.get('year')}"
+            result["source"]  = "BLS.gov"
+            return result
+    except Exception as e:
+        result["error"] = str(e)[:80]
+
+    return result
+
+
+def get_us_jobs() -> dict:
+    """US Unemployment Rate — BLS public API"""
+    result = {"unemployment": None, "period": None, "source": "", "error": ""}
+
+    url = "https://api.bls.gov/publicAPI/v1/timeseries/data/LNS14000000"
+    req = urllib.request.Request(url, headers=API_HEADERS)
+    try:
+        with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT) as resp:
+            raw = resp.read()
+            data = json.loads(raw.decode("utf-8"))
+        series = data.get("Results", {}).get("series", [])
+        if series:
+            latest = series[0]["data"][0]
+            result["unemployment"] = latest.get("value")
+            result["period"]       = f"{latest.get('periodName')} {latest.get('year')}"
+            result["source"]       = "BLS.gov"
+            return result
+    except Exception as e:
+        result["error"] = str(e)[:80]
+
+    return result
+
+
+# ══════════════════════════════════════════════════════════════════
+# PHẦN 2: RSS — Tin tức thực sự hoạt động
+# ══════════════════════════════════════════════════════════════════
+
+RSS_SOURCES = [
+    # Quốc tế
+    {"group": 2, "name": "The Guardian World",    "url": "https://www.theguardian.com/world/rss"},
+    {"group": 2, "name": "BBC World News",         "url": "https://feeds.bbci.co.uk/news/world/rss.xml"},
+    {"group": 2, "name": "RFI English",            "url": "https://www.rfi.fr/en/rss"},
+    {"group": 3, "name": "The Guardian Business",  "url": "https://www.theguardian.com/business/rss"},
+    {"group": 3, "name": "BBC Business",           "url": "https://feeds.bbci.co.uk/news/business/rss.xml"},
+    # Việt Nam — chỉ dùng nguồn RSS thực sự hoạt động
+    {"group": 3, "name": "VnExpress Kinh doanh",  "url": "https://vnexpress.net/rss/kinh-doanh.rss"},
+    {"group": 3, "name": "VnExpress Thời sự",     "url": "https://vnexpress.net/rss/thoi-su.rss"},
+    {"group":13, "name": "VnExpress Thế giới",    "url": "https://vnexpress.net/rss/the-gioi.rss"},
+    {"group":13, "name": "VnExpress Góc nhìn",    "url": "https://vnexpress.net/rss/goc-nhin.rss"},
+    # Dịch bệnh
+    {"group": 1, "name": "ProMED Mail",            "url": "https://promedmail.org/feed/"},
+    {"group": 1, "name": "CDC Health Updates",     "url": "https://tools.cdc.gov/api/v2/resources/media/316422.rss"},
+    # Trump / Địa chính trị Mỹ
+    {"group":14, "name": "White House Briefings",  "url": "https://www.whitehouse.gov/briefing-room/feed/"},
 ]
 
-# ── Decompress helper ─────────────────────────────────────────────────────────
 
 def decompress(data: bytes) -> bytes:
-    """Tự động decompress gzip/zlib/raw."""
-    # Gzip magic bytes: 1f 8b
     if data[:2] == b'\x1f\x8b':
-        try:
-            return gzip.decompress(data)
-        except Exception:
-            pass
-    # Zlib
-    try:
-        return zlib.decompress(data)
-    except Exception:
-        pass
+        try: return gzip.decompress(data)
+        except: pass
+    try: return zlib.decompress(data)
+    except: pass
     return data
 
-# ── Fetch RSS ─────────────────────────────────────────────────────────────────
 
 def fetch_rss(url: str) -> list:
-    req = urllib.request.Request(url, headers=HEADERS)
+    req = urllib.request.Request(url, headers=RSS_HEADERS)
     try:
         with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT) as resp:
             raw = decompress(resp.read())
     except Exception as e:
-        return [{"error": f"{type(e).__name__}: {str(e)[:100]}"}]
+        return [{"error": f"{type(e).__name__}: {str(e)[:80]}"}]
 
-    # Decode
     for enc in ("utf-8", "utf-8-sig", "latin-1"):
         try:
             text = raw.decode(enc)
             break
-        except Exception:
+        except:
             text = raw.decode("latin-1", errors="replace")
 
-    # Sanitize XML
     text = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', '', text)
     text = re.sub(r'encoding=["\'][^"\']+["\']', 'encoding="utf-8"', text, count=1)
 
     try:
         root = ET.fromstring(text.encode("utf-8"))
     except ET.ParseError as e:
-        return [{"error": f"XML parse: {str(e)[:100]}"}]
+        return [{"error": f"XML: {str(e)[:80]}"}]
 
-    ns  = {"atom": "http://www.w3.org/2005/Atom",
-           "dc":   "http://purl.org/dc/elements/1.1/"}
+    ns = {"atom": "http://www.w3.org/2005/Atom",
+          "dc":   "http://purl.org/dc/elements/1.1/"}
     items = []
 
     for item in root.findall(".//item"):
         title   = (item.findtext("title") or "").strip()
-        link    = (item.findtext("link") or "").strip()
+        link    = (item.findtext("link")  or "").strip()
         desc    = item.findtext("description") or ""
-        pubdate = (item.findtext("pubDate") or item.findtext("dc:date", namespaces=ns) or "").strip()
+        pubdate = (item.findtext("pubDate") or
+                   item.findtext("dc:date", namespaces=ns) or "").strip()
         summary = re.sub(r"<[^>]+>", " ", desc)
         summary = re.sub(r"\s+", " ", summary).strip()[:400]
         if title:
             items.append({"title": title, "link": link,
                           "summary": summary, "published": pubdate[:50]})
-        if len(items) >= MAX_ITEMS_PER_RSS:
-            break
+        if len(items) >= MAX_ITEMS_RSS: break
 
     if not items:
         for entry in root.findall(".//atom:entry", ns):
             title   = (entry.findtext("atom:title", namespaces=ns) or "").strip()
             le      = entry.find("atom:link", ns)
-            link    = le.get("href", "") if le is not None else ""
+            link    = le.get("href","") if le is not None else ""
             summ    = (entry.findtext("atom:summary", namespaces=ns) or
                        entry.findtext("atom:content", namespaces=ns) or "")
-            summ    = re.sub(r"<[^>]+>", " ", summ)
-            summ    = re.sub(r"\s+", " ", summ).strip()[:400]
+            summ    = re.sub(r"<[^>]+>","",summ)
+            summ    = re.sub(r"\s+"," ",summ).strip()[:400]
             pubdate = (entry.findtext("atom:published", namespaces=ns) or "").strip()
             if title:
-                items.append({"title": title, "link": link,
-                              "summary": summ, "published": pubdate[:50]})
-            if len(items) >= MAX_ITEMS_PER_RSS:
-                break
+                items.append({"title":title,"link":link,
+                              "summary":summ,"published":pubdate[:50]})
+            if len(items) >= MAX_ITEMS_RSS: break
 
-    return items if items else [{"error": "Feed rỗng — không có item"}]
+    return items or [{"error": "Feed rỗng"}]
 
-# ── Fetch Jina ─────────────────────────────────────────────────────────────────
 
-def fetch_jina(url: str, max_chars: int = MAX_CHARS_JINA) -> str:
+def is_important(title: str, summary: str) -> bool:
+    return any(kw in (title+" "+summary).lower() for kw in IMPORTANT_KEYWORDS)
+
+
+def fetch_full_article(url: str) -> str:
+    if not url or not url.startswith("http"): return ""
     req = urllib.request.Request(JINA_BASE + url, headers=JINA_HEADERS)
     try:
         with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT) as resp:
-            raw = resp.read()
-        # Nếu vẫn bị nén dù đã yêu cầu identity
-        raw = decompress(raw)
-        text = raw.decode("utf-8", errors="replace")
-        return clean_jina(text)[:max_chars]
-    except Exception as e:
-        return f"[Lỗi Jina: {type(e).__name__}: {str(e)[:80]}]"
-
-
-def clean_jina(text: str) -> str:
-    # Loại bỏ binary garbage còn sót
-    text = re.sub(r'[^\x09\x0a\x0d\x20-\x7e\x80-\xff]', '', text)
-    lines, out = text.split("\n"), []
-    noise = {"cookie","javascript","subscribe","sign in","log in",
-             "advertisement","quảng cáo","đăng nhập","đăng ký",
-             "skip to content","toggle navigation","menu"}
-    for line in lines:
-        s = line.strip()
-        if len(s) < 20: continue
-        if re.match(r'^https?://\S+$', s): continue
-        if re.match(r'^[=\-_*#|]{3,}$', s): continue
-        if any(n in s.lower() for n in noise): continue
-        out.append(s)
-    return "\n".join(out[:120])
-
-# ── Quan trọng → full article ─────────────────────────────────────────────────
-
-def is_important(title: str, summary: str) -> bool:
-    return any(kw in (title + " " + summary).lower() for kw in IMPORTANT_KEYWORDS)
-
-
-def fetch_full(url: str) -> str:
-    if not url or not url.startswith("http"):
+            raw = decompress(resp.read())
+            text = raw.decode("utf-8", errors="replace")
+        lines = [l.strip() for l in text.split("\n")
+                 if len(l.strip()) > 30 and not l.strip().startswith("http")]
+        return "\n".join(lines[:80])[:MAX_CHARS_ARTICLE]
+    except:
         return ""
-    content = fetch_jina(url, MAX_CHARS_FULL)
-    return "" if content.startswith("[Lỗi") else content
 
-# ── Process source ─────────────────────────────────────────────────────────────
 
-def process_source(source: dict) -> dict:
-    result = {"name": source["name"], "mode": "", "items": [],
-              "jina_content": "", "ok": False, "important_count": 0}
-
-    if "rss" in source:
-        result["mode"] = "RSS"
-        items = fetch_rss(source["rss"])
+def collect_all_rss() -> dict:
+    """Trả về dict {group_id: [items]}"""
+    by_group = {}
+    for src in RSS_SOURCES:
+        gid = src["group"]
+        print(f"  [RSS] {src['name']}...")
+        items = fetch_rss(src["url"])
+        if gid not in by_group:
+            by_group[gid] = {"sources": []}
+        result = {"name": src["name"], "ok": False, "items": [], "important_count": 0}
         if items and "error" not in items[0]:
             result["ok"] = True
             enriched = []
             for item in items:
                 full = ""
                 if is_important(item.get("title",""), item.get("summary","")):
-                    full = fetch_full(item.get("link",""))
-                    if full:
-                        result["important_count"] += 1
-                        time.sleep(1)
+                    full = fetch_full_article(item.get("link",""))
+                    if full: result["important_count"] += 1; time.sleep(0.5)
                 item["full"] = full
                 enriched.append(item)
             result["items"] = enriched
         else:
-            err = items[0].get("error","") if items else "No response"
-            result["items"] = [{"error": err}]
-
-    elif "jina" in source:
-        result["mode"] = "Jina"
-        content = fetch_jina(source["jina"])
-        if not content.startswith("[Lỗi"):
-            result["ok"] = True
-        result["jina_content"] = content
-
-    return result
+            result["items"] = items
+        by_group[gid]["sources"].append(result)
+        time.sleep(0.8)
+    return by_group
 
 
-def collect_group(group: dict) -> dict:
-    sources_data = []
-    for source in group["sources"]:
-        mode = "RSS" if "rss" in source else "Jina"
-        print(f"  [{mode}] {source['name']}...")
-        data = process_source(source)
-        sources_data.append(data)
-        time.sleep(1.0)
-    return {"group": group, "sources": sources_data}
+# ══════════════════════════════════════════════════════════════════
+# PHẦN 3: Build Markdown
+# ══════════════════════════════════════════════════════════════════
 
-# ── Build Markdown ─────────────────────────────────────────────────────────────
+def fmt_num(v, decimals=2, suffix=""):
+    if v is None: return "N/A"
+    try: return f"{float(v):,.{decimals}f}{suffix}"
+    except: return str(v)
 
-def build_markdown(all_data: list, vn_now: datetime.datetime) -> str:
-    time_str = vn_now.strftime("%Y-%m-%d %H:%M ICT")
+
+def build_markdown(api_data: dict, rss_data: dict, vn_now: datetime.datetime) -> str:
+    ts = vn_now.strftime("%Y-%m-%d %H:%M ICT")
     lines = [
         "# 🇻🇳 Vietnam Intelligence Report",
         "",
-        f"> **Thời gian:** {time_str}  ",
-        "> **Phiên bản:** v4 — Gzip fix + Jina fallback toàn bộ  ",
+        f"> **Thời gian:** {ts}  ",
+        "> **Phiên bản:** v5 — API JSON (số liệu thực) + RSS (tin tức)  ",
         "> **Dùng cho:** AI Investment Team",
         "",
         "---", "",
     ]
 
-    total_items = total_ok = total_important = 0
+    # ── BẢNG SỐ LIỆU TỔNG HỢP ──────────────────────────────────────
+    gold  = api_data.get("gold", {})
+    fx    = api_data.get("fx", {})
+    fed   = api_data.get("fed", {})
+    cpi   = api_data.get("cpi", {})
+    jobs  = api_data.get("jobs", {})
+    oil   = api_data.get("oil", {})
 
-    for gd in all_data:
-        group, sources = gd["group"], gd["sources"]
-        ok_count = sum(1 for s in sources if s["ok"])
-        total_ok += ok_count
+    lines += [
+        "## 📊 Bảng Số liệu Thị trường (Real-time API)",
+        "",
+        "### 🥇 Vàng & Bạc",
+        f"| | Giá | Nguồn |",
+        f"|---|---|---|",
+        f"| Vàng thế giới (XAU/USD) | **{fmt_num(gold.get('xau_usd'))} USD/oz** | {gold.get('source','N/A')} |",
+        f"| Bạc thế giới (XAG/USD) | {fmt_num(gold.get('xag_usd'))} USD/oz | {gold.get('source','N/A')} |",
+        "",
+        "### 💱 Tỷ giá",
+        f"| Cặp | Tỷ giá | Nguồn |",
+        f"|---|---|---|",
+        f"| USD/VND | **{fmt_num(fx.get('usd_vnd'),0)} VND** | {fx.get('source','N/A')} |",
+        f"| EUR/USD | {fmt_num(fx.get('eur_usd'),4)} | {fx.get('source','N/A')} |",
+        f"| CNY/USD | {fmt_num(fx.get('cny_usd'),4)} | {fx.get('source','N/A')} |",
+        "",
+        "### 🏦 Lãi suất & Vĩ mô Mỹ",
+        f"| Chỉ số | Giá trị | Kỳ | Nguồn |",
+        f"|---|---|---|---|",
+        f"| Fed Funds Rate | **{fmt_num(fed.get('rate'),2,'%')}** | {fed.get('date','N/A')} | {fed.get('source','N/A')} |",
+        f"| CPI YoY | **{fmt_num(cpi.get('cpi_yoy'),1,'%')}** | {cpi.get('period','N/A')} | {cpi.get('source','N/A')} |",
+        f"| Tỷ lệ thất nghiệp | {fmt_num(jobs.get('unemployment'),1,'%')} | {jobs.get('period','N/A')} | {jobs.get('source','N/A')} |",
+        "",
+    ]
 
-        lines.append(f"## {group['icon']} Nhóm {group['id']}: {group['name']}")
+    if oil.get("wti"):
+        lines += [
+            "### 🛢️ Giá dầu",
+            f"| | Giá | Nguồn |",
+            f"|---|---|---|",
+            f"| WTI Crude | **{fmt_num(oil.get('wti'))} USD/barrel** | {oil.get('source','N/A')} |",
+            "",
+        ]
+
+    # Ghi chú lỗi API nếu có
+    for key, label in [("gold","Vàng"),("fx","Tỷ giá"),("fed","Fed"),("cpi","CPI"),("jobs","Jobs")]:
+        d = api_data.get(key,{})
+        if d.get("error"):
+            lines.append(f"> ⚠️ {label}: {d['error']}")
+    lines += ["", "---", ""]
+
+    # ── TIN TỨC RSS THEO NHÓM ───────────────────────────────────────
+    GROUP_NAMES = {
+        1:  ("🏥", "Dịch bệnh & Thiên tai"),
+        2:  ("🌍", "Địa chính trị Thế giới"),
+        3:  ("💹", "Kinh tế & Tài chính"),
+        13: ("🎙️", "Phát biểu & Ý chí lãnh đạo VN"),
+        14: ("🗺️", "Trump & Chính sách địa phương"),
+    }
+
+    total_items = total_imp = 0
+
+    for gid in sorted(GROUP_NAMES.keys()):
+        icon, gname = GROUP_NAMES[gid]
+        gdata = rss_data.get(gid)
+        lines.append(f"## {icon} {gname}")
         lines.append("")
-        if "note" in group:
-            lines.append(f"*{group['note']}*")
-            lines.append("")
-        lines.append(f"*{len(sources)} nguồn — {ok_count} thành công*")
+
+        if not gdata:
+            lines += ["*Không có nguồn RSS nào cho nhóm này*", "", "---", ""]
+            continue
+
+        ok = sum(1 for s in gdata["sources"] if s["ok"])
+        lines.append(f"*{len(gdata['sources'])} nguồn — {ok} thành công*")
         lines.append("")
 
-        for src in sources:
+        for src in gdata["sources"]:
             status = "✅" if src["ok"] else "❌"
-            lines.append(f"### {status} {src['name']} `[{src['mode']}]`")
+            lines.append(f"### {status} {src['name']} `[RSS]`")
             lines.append("")
-
-            if src["mode"] == "RSS":
-                items = src.get("items", [])
-                if items and "error" not in items[0]:
-                    n = len(items)
-                    ni = src.get("important_count", 0)
-                    total_items += n
-                    total_important += ni
-                    label = f"{n} tin" + (f" — {ni} tin quan trọng (đã đọc full)" if ni else "")
-                    lines.append(f"*{label}*")
-                    lines.append("")
-                    for i, item in enumerate(items, 1):
-                        title = item.get("title","")
-                        link  = item.get("link","")
-                        summ  = item.get("summary","")
-                        pub   = item.get("published","")
-                        full  = item.get("full","")
-                        lines.append(f"**{i}. [{title}]({link})**" if link else f"**{i}. {title}**")
-                        if pub: lines.append(f"*{pub}*")
-                        if summ: lines.append(f"> {summ[:300]}")
-                        if full:
-                            lines.append("")
-                            lines.append("📌 **Nội dung đầy đủ:**")
-                            lines.append(full[:MAX_CHARS_FULL])
-                        lines.append("")
-                else:
-                    err = items[0].get("error","") if items else ""
-                    lines.append(f"*❌ Lỗi: {err}*")
+            items = src.get("items", [])
+            if items and "error" not in items[0]:
+                n  = len(items)
+                ni = src.get("important_count", 0)
+                total_items += n; total_imp += ni
+                lines.append(f"*{n} tin*" + (f" — *{ni} tin quan trọng (đọc full)*" if ni else ""))
+                lines.append("")
+                for i, item in enumerate(items, 1):
+                    t = item.get("title","")
+                    l = item.get("link","")
+                    s = item.get("summary","")
+                    p = item.get("published","")
+                    f = item.get("full","")
+                    lines.append(f"**{i}. [{t}]({l})**" if l else f"**{i}. {t}**")
+                    if p: lines.append(f"*{p}*")
+                    if s: lines.append(f"> {s[:300]}")
+                    if f: lines += ["", "📌 **Nội dung đầy đủ:**", f[:MAX_CHARS_ARTICLE], ""]
                     lines.append("")
             else:
-                content = src.get("jina_content","")
-                lines.append(content if content and not content.startswith("[Lỗi") else f"*{content}*")
+                err = items[0].get("error","") if items else ""
+                lines.append(f"*❌ {err}*")
                 lines.append("")
-
             lines += ["---", ""]
 
-    total_sources = sum(len(g["sources"]) for g in all_data)
+    # ── FOOTER ──────────────────────────────────────────────────────
     lines += [
-        "## 📊 Tóm tắt",
+        "## 📋 Tóm tắt",
         "",
         f"| Chỉ tiêu | Kết quả |",
         f"|---|---|",
-        f"| Tổng nguồn | {total_sources} |",
-        f"| Thành công | {total_ok} |",
-        f"| Thất bại | {total_sources - total_ok} |",
-        f"| Tin RSS | {total_items} |",
-        f"| Tin quan trọng (full) | {total_important} |",
-        f"| Thời gian | {time_str} |",
+        f"| API số liệu thực | Vàng · Tỷ giá · Fed · CPI · Jobs |",
+        f"| Tổng tin RSS | {total_items} |",
+        f"| Tin quan trọng (full) | {total_imp} |",
+        f"| Thời gian | {ts} |",
         "",
-        "*Vietnam Intelligence Collector v4 — github.com/TrangMinh0204/Macro-Data*",
+        "*Vietnam Intelligence Collector v5 — github.com/TrangMinh0204/Macro-Data*",
     ]
     return "\n".join(lines)
 
-# ── Index ──────────────────────────────────────────────────────────────────────
+
+# ══════════════════════════════════════════════════════════════════
+# PHẦN 4: Index & Main
+# ══════════════════════════════════════════════════════════════════
 
 def update_index(index_file: Path, date_str: str, hour_str: str, vn_now: datetime.datetime):
-    time_str = vn_now.strftime("%Y-%m-%d %H:%M ICT")
-    entry = f"- [{time_str}](output/{date_str}/{hour_str}.md)"
+    ts    = vn_now.strftime("%Y-%m-%d %H:%M ICT")
+    entry = f"- [{ts}](output/{date_str}/{hour_str}.md)"
     if index_file.exists():
         lines = index_file.read_text(encoding="utf-8").split("\n")
-        insert_at = next((i for i, l in enumerate(lines) if l.startswith("- [")), 5)
-        lines.insert(insert_at, entry)
+        ins   = next((i for i,l in enumerate(lines) if l.startswith("- [")), 5)
+        lines.insert(ins, entry)
         index_file.write_text("\n".join(lines), encoding="utf-8")
     else:
         index_file.write_text(
-            f"# Vietnam Intelligence — Index\n\nDanh sách report theo giờ.\n\n{entry}\n",
+            f"# Vietnam Intelligence — Index\n\nReport tự động theo giờ.\n\n{entry}\n",
             encoding="utf-8")
 
-# ── Main ──────────────────────────────────────────────────────────────────────
 
 def main():
     utc_now  = datetime.datetime.utcnow()
@@ -459,29 +520,61 @@ def main():
     hour_str = vn_now.strftime("%H-%M")
 
     print(f"\n{'='*60}")
-    print(f"Vietnam Intelligence Collector v4")
+    print(f"Vietnam Intelligence Collector v5")
     print(f"Thời gian: {vn_now.strftime('%Y-%m-%d %H:%M ICT')}")
-    print(f"Fix: Gzip decompress, RSS→Jina fallback, URL mới")
+    print(f"Strategy: API JSON (số liệu thực) + RSS (tin tức)")
     print(f"{'='*60}\n")
 
+    # Thu thập API
+    print("[API] Lấy số liệu thị trường...")
+    api_data = {}
+
+    print("  [API] Giá vàng/bạc...")
+    api_data["gold"] = get_gold_prices()
+    print(f"        XAU/USD = {api_data['gold'].get('xau_usd')} ({api_data['gold'].get('source')})")
+
+    print("  [API] Tỷ giá...")
+    api_data["fx"] = get_exchange_rates()
+    print(f"        USD/VND = {api_data['fx'].get('usd_vnd')} ({api_data['fx'].get('source')})")
+
+    print("  [API] Fed Funds Rate...")
+    api_data["fed"] = get_fed_rate()
+    print(f"        Fed = {api_data['fed'].get('rate')}% ({api_data['fed'].get('date')})")
+
+    print("  [API] US CPI...")
+    api_data["cpi"] = get_us_cpi()
+    print(f"        CPI = {api_data['cpi'].get('cpi_yoy')}% ({api_data['cpi'].get('period')})")
+
+    print("  [API] US Jobs...")
+    api_data["jobs"] = get_us_jobs()
+    print(f"        Unemployment = {api_data['jobs'].get('unemployment')}%")
+
+    print("  [API] Giá dầu...")
+    api_data["oil"] = get_oil_price()
+
+    # Thu thập RSS
+    print("\n[RSS] Thu thập tin tức...")
+    rss_data = collect_all_rss()
+
+    # Tạo file
     output_dir  = Path("output") / date_str
     output_dir.mkdir(parents=True, exist_ok=True)
     output_file = output_dir / f"{hour_str}.md"
 
-    all_data = []
-    for group in GROUPS:
-        print(f"\n[Nhóm {group['id']}] {group['icon']} {group['name']}")
-        all_data.append(collect_group(group))
-
-    print(f"\n{'='*60}")
-    md = build_markdown(all_data, vn_now)
+    md = build_markdown(api_data, rss_data, vn_now)
     output_file.write_text(md, encoding="utf-8")
     update_index(Path("output") / "INDEX.md", date_str, hour_str, vn_now)
 
-    ok_total    = sum(sum(1 for s in g["sources"] if s["ok"]) for g in all_data)
-    src_total   = sum(len(g["sources"]) for g in all_data)
-    print(f"✅ Xong! {ok_total}/{src_total} nguồn thành công")
+    rss_ok = sum(
+        sum(1 for s in g["sources"] if s["ok"])
+        for g in rss_data.values()
+    )
+    rss_total = sum(len(g["sources"]) for g in rss_data.values())
+    print(f"\n✅ Xong!")
+    print(f"   API: gold={bool(api_data['gold'].get('xau_usd'))} fx={bool(api_data['fx'].get('usd_vnd'))} fed={bool(api_data['fed'].get('rate'))}")
+    print(f"   RSS: {rss_ok}/{rss_total} nguồn thành công")
     print(f"   File: {output_file} ({len(md):,} ký tự)")
+
 
 if __name__ == "__main__":
     main()
