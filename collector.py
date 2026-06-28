@@ -67,28 +67,59 @@ def fetch_json(url: str, headers: dict = None) -> dict | list | None:
 
 
 def get_gold_prices() -> dict:
-    """Giá vàng thế giới — metals-api miễn phí (không cần key cho XAU/USD basic)"""
+    """Giá vàng thế giới — thử nhiều nguồn free theo thứ tự ưu tiên"""
     result = {"xau_usd": None, "xag_usd": None, "source": "", "error": ""}
 
-    # Thử ExchangeRate-API metals (free, không cần key)
-    data = fetch_json("https://api.metals.live/v1/spot/gold,silver")
-    if isinstance(data, list) and not isinstance(data, dict):
-        for item in data:
-            if isinstance(item, dict):
-                if item.get("gold"): result["xau_usd"] = item["gold"]
-                if item.get("silver"): result["xag_usd"] = item["silver"]
-        if result["xau_usd"]:
-            result["source"] = "metals.live"
+    # Nguồn 1: metals.live (free, không cần key)
+    try:
+        data = fetch_json("https://api.metals.live/v1/spot/gold,silver")
+        if isinstance(data, list):
+            for item in data:
+                if isinstance(item, dict):
+                    if item.get("gold"): result["xau_usd"] = float(item["gold"])
+                    if item.get("silver"): result["xag_usd"] = float(item["silver"])
+            if result["xau_usd"]:
+                result["source"] = "metals.live"
+                return result
+    except: pass
+
+    # Nguồn 2: coinbase public API (XAU/USD)
+    try:
+        data2 = fetch_json("https://api.coinbase.com/v2/exchange-rates?currency=XAU")
+        if isinstance(data2, dict):
+            rates = data2.get("data", {}).get("rates", {})
+            if rates.get("USD"):
+                result["xau_usd"] = float(rates["USD"])
+                result["source"] = "coinbase"
+                # Silver từ XAG
+                data3 = fetch_json("https://api.coinbase.com/v2/exchange-rates?currency=XAG")
+                if isinstance(data3, dict):
+                    r3 = data3.get("data", {}).get("rates", {})
+                    if r3.get("USD"): result["xag_usd"] = float(r3["USD"])
+                return result
+    except: pass
+
+    # Nguồn 3: gold-api.com (free tier)
+    try:
+        data4 = fetch_json("https://www.goldapi.io/api/XAU/USD")
+        if isinstance(data4, dict) and data4.get("price"):
+            result["xau_usd"] = float(data4["price"])
+            result["source"] = "goldapi.io"
             return result
+    except: pass
 
-    # Fallback: frankfurter.app (EUR base, tính ngược)
-    data2 = fetch_json("https://api.frankfurter.app/latest?from=XAU&to=USD")
-    if isinstance(data2, dict) and "rates" in data2:
-        result["xau_usd"] = data2["rates"].get("USD")
-        result["source"] = "frankfurter.app"
-        return result
+    # Nguồn 4: open.er-api USD rates (gián tiếp qua EUR)
+    try:
+        data5 = fetch_json("https://open.er-api.com/v6/latest/XAU")
+        if isinstance(data5, dict) and data5.get("result") == "success":
+            usd = data5.get("rates", {}).get("USD")
+            if usd:
+                result["xau_usd"] = float(usd)
+                result["source"] = "er-api (XAU)";
+                return result
+    except: pass
 
-    result["error"] = "Không lấy được giá vàng"
+    result["error"] = "Không lấy được giá vàng — tất cả nguồn thất bại"
     return result
 
 
@@ -143,47 +174,89 @@ def get_oil_price() -> dict:
 
 
 def get_fed_rate() -> dict:
-    """Fed Funds Rate — FRED API (St. Louis Fed, hoàn toàn miễn phí)"""
+    """Fed Funds Rate — FRED CSV với xử lý gzip/encoding đúng"""
     result = {"rate": None, "date": None, "source": "", "error": ""}
 
-    # FRED public API — series FEDFUNDS (monthly) không cần key cho read
-    url = "https://fred.stlouisfed.org/graph/fredgraph.csv?id=FEDFUNDS"
-    req = urllib.request.Request(url, headers=API_HEADERS)
+    # Nguồn 1: FRED CSV — không gửi Accept-Encoding để tránh gzip
+    req = urllib.request.Request(
+        "https://fred.stlouisfed.org/graph/fredgraph.csv?id=FEDFUNDS",
+        headers={
+            "User-Agent": "Mozilla/5.0 (compatible; VietnamIntelligence/2.0)",
+            "Accept": "text/csv, text/plain, */*",
+            # Bỏ Accept-Encoding để nhận plain text
+        }
+    )
     try:
         with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT) as resp:
             raw = resp.read()
-            if raw[:2] == b'\x1f\x8b':
-                raw = gzip.decompress(raw)
-            text = raw.decode("utf-8")
-            lines = [l.strip() for l in text.strip().split("\n") if l.strip()]
-            # Lấy dòng cuối cùng (mới nhất)
+        # Decompress nếu server vẫn gzip
+        if raw[:2] == b"\x1f\x8b":
+            raw = gzip.decompress(raw)
+        elif raw[:2] in (b"\x78\x9c", b"\x78\x01", b"\x78\xda"):
+            raw = zlib.decompress(raw)
+        text = raw.decode("utf-8", errors="replace")
+        lines = [l.strip() for l in text.split("\n")
+                 if l.strip() and not l.startswith("DATE")]
+        if lines:
             last = lines[-1].split(",")
-            if len(last) == 2 and last[1] != ".":
-                result["rate"] = float(last[1])
-                result["date"] = last[0]
+            if len(last) == 2 and last[1].strip() not in (".", ""):
+                result["rate"]   = float(last[1].strip())
+                result["date"]   = last[0].strip()
                 result["source"] = "FRED St.Louis Fed"
                 return result
     except Exception as e:
-        result["error"] = str(e)[:80]
+        result["_fred_err"] = str(e)[:80]
 
-    # Fallback: Trading Economics
-    result["error"] = "FRED không khả dụng"
+    # Nguồn 2: Federal Reserve H.15 trang HTML
+    try:
+        req2 = urllib.request.Request(
+            "https://www.federalreserve.gov/releases/h15/current/default.htm",
+            headers={"User-Agent": "Mozilla/5.0", "Accept": "text/html"}
+        )
+        with urllib.request.urlopen(req2, timeout=REQUEST_TIMEOUT) as resp2:
+            raw2 = resp2.read()
+        if raw2[:2] == b"\x1f\x8b": raw2 = gzip.decompress(raw2)
+        text2 = raw2.decode("utf-8", errors="replace")
+        import re as _re2
+        m = _re2.search(r"Federal funds[^\d]*(\d+\.\d+)", text2, _re2.IGNORECASE)
+        if m:
+            result["rate"]   = float(m.group(1))
+            result["source"] = "FederalReserve.gov H.15"
+            return result
+    except Exception as e2:
+        result["_h15_err"] = str(e2)[:80]
+
+    # Nguồn 3: fetch_json exchangeratesapi backup
+    try:
+        d = fetch_json("https://open.er-api.com/v6/latest/USD")
+        if isinstance(d, dict) and d.get("result") == "success":
+            # Không có Fed rate trực tiếp nhưng xác nhận API sống
+            pass
+    except: pass
+
+    result["error"] = "Fed rate: thất bại FRED + H.15"
     return result
-
-
 def get_us_cpi() -> dict:
-    """US CPI YoY — BLS public API (không cần key)"""
+    """US CPI YoY — BLS public API với xử lý gzip đúng"""
     result = {"cpi_yoy": None, "period": None, "source": "", "error": ""}
 
-    # BLS Public Data API v1 (không cần key, giới hạn 25 req/ngày)
     url = "https://api.bls.gov/publicAPI/v1/timeseries/data/CUUR0000SA0"
-    req = urllib.request.Request(url, headers=API_HEADERS)
+    req = urllib.request.Request(url, headers={
+        "User-Agent": "Mozilla/5.0",
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+    })
     try:
         with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT) as resp:
             raw = resp.read()
-            data = json.loads(raw.decode("utf-8"))
+        # Fix lỗi 0x8b — BLS gzip response dù không yêu cầu
+        if raw[:2] == b"\x1f\x8b":
+            raw = gzip.decompress(raw)
+        elif raw[:2] in (b"\x78\x9c", b"\x78\x01", b"\x78\xda"):
+            raw = zlib.decompress(raw)
+        data = json.loads(raw.decode("utf-8", errors="replace"))
         series = data.get("Results", {}).get("series", [])
-        if series:
+        if series and series[0].get("data"):
             latest = series[0]["data"][0]
             result["cpi_yoy"] = latest.get("value")
             result["period"]  = f"{latest.get('periodName')} {latest.get('year')}"
@@ -192,21 +265,30 @@ def get_us_cpi() -> dict:
     except Exception as e:
         result["error"] = str(e)[:80]
 
+    # Fallback: Trading Economics CPI page (Jina)
+    result["error"] = result.get("error", "") + " | BLS API lỗi"
     return result
-
-
 def get_us_jobs() -> dict:
-    """US Unemployment Rate — BLS public API"""
+    """US Unemployment Rate — BLS public API với xử lý gzip đúng"""
     result = {"unemployment": None, "period": None, "source": "", "error": ""}
 
     url = "https://api.bls.gov/publicAPI/v1/timeseries/data/LNS14000000"
-    req = urllib.request.Request(url, headers=API_HEADERS)
+    req = urllib.request.Request(url, headers={
+        "User-Agent": "Mozilla/5.0",
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+    })
     try:
         with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT) as resp:
             raw = resp.read()
-            data = json.loads(raw.decode("utf-8"))
+        # Fix lỗi 0x8b — decompress gzip/zlib
+        if raw[:2] == b"\x1f\x8b":
+            raw = gzip.decompress(raw)
+        elif raw[:2] in (b"\x78\x9c", b"\x78\x01", b"\x78\xda"):
+            raw = zlib.decompress(raw)
+        data = json.loads(raw.decode("utf-8", errors="replace"))
         series = data.get("Results", {}).get("series", [])
-        if series:
+        if series and series[0].get("data"):
             latest = series[0]["data"][0]
             result["unemployment"] = latest.get("value")
             result["period"]       = f"{latest.get('periodName')} {latest.get('year')}"
@@ -215,8 +297,8 @@ def get_us_jobs() -> dict:
     except Exception as e:
         result["error"] = str(e)[:80]
 
+    result["error"] = result.get("error", "") + " | BLS API lỗi"
     return result
-
 
 # ══════════════════════════════════════════════════════════════════
 # PHẦN 2: RSS — Tin tức thực sự hoạt động
@@ -235,6 +317,15 @@ RSS_SOURCES = [
     {"group": 3, "name": "VnExpress Thời sự",          "url": "https://vnexpress.net/rss/thoi-su.rss"},
     {"group":13, "name": "VnExpress Thế giới",         "url": "https://vnexpress.net/rss/the-gioi.rss"},
     {"group":13, "name": "VnExpress Góc nhìn",         "url": "https://vnexpress.net/rss/goc-nhin.rss"},
+
+    # ── CafeF — thay thế Vietstock (RSS hoạt động tốt) ───────────
+    {"group": 3, "name": "CafeF Chứng khoán",          "url": "https://cafef.vn/chung-khoan.rss"},
+    {"group": 3, "name": "CafeF Vĩ mô VN",             "url": "https://cafef.vn/kinh-te-viet-nam.rss"},
+    {"group": 3, "name": "CafeF Doanh nghiệp",         "url": "https://cafef.vn/doanh-nghiep.rss"},
+
+    # ── Phân tích TTCK — Jina đọc được ───────────────────────────
+    {"group": 3, "name": "Nhịp cầu đầu tư",            "jina": "https://nhipcaudautu.vn/"},
+    {"group": 3, "name": "Tin nhanh chứng khoán",      "jina": "https://tinnhanhchungkhoan.vn/"},
 
     # ── Chính phủ VN — Chỉ đạo điều hành (nhóm 10) ───────────────
     {"group":10, "name": "ChinhPhu Chỉ đạo điều hành", "jina": "https://chinhphu.vn/chi-dao-quyet-dinh-cua-chinh-phu-thu-tuong-chinh-phu"},
