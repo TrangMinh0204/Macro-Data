@@ -312,12 +312,39 @@ def get_us_jobs() -> dict:
 # ══════════════════════════════════════════════════════════════════
 
 RSS_SOURCES = [
-    # ── Quốc tế ───────────────────────────────────────────────────
-    {"group": 2, "name": "The Guardian World",         "url": "https://www.theguardian.com/world/rss"},
+    # ── Quốc tế — Big 6 sources ─────────────────────────────────
+    # BBC — RSS chính thức còn hoạt động
     {"group": 2, "name": "BBC World News",              "url": "https://feeds.bbci.co.uk/news/world/rss.xml"},
-    {"group": 2, "name": "RFI English",                 "url": "https://www.rfi.fr/en/rss"},
-    {"group": 3, "name": "The Guardian Business",       "url": "https://www.theguardian.com/business/rss"},
-    {"group": 3, "name": "BBC Business",                "url": "https://feeds.bbci.co.uk/news/business/rss.xml"},
+    {"group": 2, "name": "BBC Business",                "url": "https://feeds.bbci.co.uk/news/business/rss.xml"},
+
+    # CNN — RSS edition world
+    {"group": 2, "name": "CNN World",                   "url": "https://rss.cnn.com/rss/edition_world.rss"},
+    {"group": 3, "name": "CNN Business",                "url": "https://rss.cnn.com/rss/money_latest.rss"},
+
+    # Reuters — đã tắt RSS trực tiếp 2020, dùng Google News RSS
+    {"group": 2, "name": "Reuters World (GNews)",       "url": "https://news.google.com/rss/search?q=when:24h+allinurl:reuters.com&hl=en-US&gl=US&ceid=US:en"},
+    {"group": 3, "name": "Reuters Business (GNews)",    "url": "https://news.google.com/rss/search?q=when:24h+allinurl:reuters.com+business&hl=en-US&gl=US&ceid=US:en"},
+
+    # NYT — RSS còn hoạt động (nội dung tóm tắt, full article có paywall)
+    {"group": 2, "name": "NYT World",                   "url": "https://rss.nytimes.com/services/xml/rss/nyt/World.xml"},
+    {"group": 3, "name": "NYT Business",                "url": "https://rss.nytimes.com/services/xml/rss/nyt/Business.xml"},
+
+    # Washington Post — RSS còn hoạt động
+    {"group": 2, "name": "Washington Post World",       "url": "https://feeds.washingtonpost.com/rss/world"},
+    {"group": 3, "name": "Washington Post Business",    "url": "https://feeds.washingtonpost.com/rss/business"},
+
+    # Bloomberg — không có public RSS, dùng Google News RSS về Bloomberg
+    {"group": 3, "name": "Bloomberg (GNews)",           "url": "https://news.google.com/rss/search?q=when:24h+allinurl:bloomberg.com&hl=en-US&gl=US&ceid=US:en"},
+    {"group": 6, "name": "Bloomberg Economics (GNews)", "url": "https://news.google.com/rss/search?q=when:24h+allinurl:bloomberg.com+fed+rate+economy&hl=en-US&gl=US&ceid=US:en"},
+
+    # Giữ lại The Guardian + RFI
+    {"group": 2, "name": "The Guardian World",         "url": "https://www.theguardian.com/world/rss"},
+    {"group": 2, "name": "RFI English",                "url": "https://www.rfi.fr/en/rss"},
+    {"group": 3, "name": "The Guardian Business",      "url": "https://www.theguardian.com/business/rss"},
+
+    # AP News — thêm vào làm nguồn tin cậy
+    {"group": 2, "name": "AP News World",              "url": "https://feeds.apnews.com/rss/apf-intlnews"},
+    {"group": 3, "name": "AP News Business",           "url": "https://feeds.apnews.com/rss/apf-business"},
 
     # ── Việt Nam tin tức ──────────────────────────────────────────
     # VnExpress — thường bị 503 do chặn bot, dùng VnEconomy + Tuổi Trẻ thay thế
@@ -331,9 +358,9 @@ RSS_SOURCES = [
     {"group":13, "name": "VnExpress Góc nhìn",         "url": "https://vnexpress.net/rss/goc-nhin.rss"},
 
     # ── CafeF — thay thế Vietstock (RSS hoạt động tốt) ───────────
-    {"group": 3, "name": "CafeF Chứng khoán",          "url": "https://cafef.vn/thi-truong-chung-khoan.chn"},
-    {"group": 3, "name": "CafeF Vĩ mô VN",             "url": "https://cafef.vn/vi-mo-dau-tu.chn"},
-    {"group": 3, "name": "CafeF Doanh nghiệp",         "url": "https://cafef.vn/doanh-nghiep.chn"},
+    {"group": 3, "name": "CafeF Chứng khoán",          "url": "https://cafef.vn/thi-truong-chung-khoan.rss"},
+    {"group": 3, "name": "CafeF Vĩ mô VN",             "url": "https://cafef.vn/vi-mo-dau-tu.rss"},
+    {"group": 3, "name": "CafeF Doanh nghiệp",         "url": "https://cafef.vn/doanh-nghiep.rss"},
 
     # ── Phân tích TTCK — Jina đọc được ───────────────────────────
     {"group": 3, "name": "Nhịp cầu đầu tư",            "jina": "https://nhipcaudautu.vn/"},
@@ -358,7 +385,10 @@ RSS_SOURCES = [
     {"group": 1, "name": "CDC Health Updates",          "url": "https://tools.cdc.gov/api/v2/resources/media/316422.rss"},
 
     # ── Trump / Địa chính trị Mỹ ─────────────────────────────────
-    {"group":14, "name": "White House Briefings",       "url": "https://www.whitehouse.gov/news/feed/"},
+    # White House đã bỏ RSS — dùng Jina đọc trang HTML
+    {"group":14, "name": "White House News",            "jina": "https://www.whitehouse.gov/news/"},
+    {"group":14, "name": "White House Briefings",       "jina": "https://www.whitehouse.gov/briefings-statements/"},
+    {"group":14, "name": "White House Executive Orders","jina": "https://www.whitehouse.gov/presidential-actions/executive-orders/"},
 ]
 
 
@@ -391,8 +421,13 @@ def fetch_rss(url: str) -> list:
 
     try:
         root = ET.fromstring(text.encode("utf-8"))
-    except ET.ParseError as e:
-        return [{"error": f"XML: {str(e)[:80]}"}]
+    except ET.ParseError:
+        # Fix & không encode — lỗi phổ biến ở CafeF, nguồn VN
+        text2 = re.sub(r'&(?!amp;|lt;|gt;|quot;|apos;|#)', '&amp;', text)
+        try:
+            root = ET.fromstring(text2.encode("utf-8"))
+        except ET.ParseError as e2:
+            return [{"error": f"XML: {str(e2)[:80]}"}]
 
     ns = {"atom": "http://www.w3.org/2005/Atom",
           "dc":   "http://purl.org/dc/elements/1.1/"}
