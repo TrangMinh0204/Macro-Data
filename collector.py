@@ -1,383 +1,509 @@
 """
-Vietnam Intelligence Collector
-================================
-Thu thập 14 nhóm thông tin mỗi 1 tiếng, output ra file .md.
-Chạy tự động qua GitHub Actions — không cần bật máy.
+Vietnam Intelligence Collector v2
+===================================
+Nâng cấp: RSS Feed + Jina Reader + Full article cho tin quan trọng
+- RSS khi có → headline + link + summary sạch
+- Jina fallback → nguồn không có RSS
+- Auto-detect tin quan trọng → fetch full nội dung bài đó
 
-Nguồn: Jina Reader (free, không cần API key)
-Output: output/YYYY-MM-DD/HH-MM.md
+Output: output/YYYY-MM-DD/HH-MM.md (mỗi 1 tiếng)
 """
 
-import os
-import json
 import time
 import datetime
 import urllib.request
-import urllib.parse
 import urllib.error
 import re
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 # ── Cấu hình ──────────────────────────────────────────────────────────────────
 
-TIMEZONE_OFFSET = 7  # ICT = UTC+7
+TIMEZONE_OFFSET  = 7        # ICT = UTC+7
+REQUEST_TIMEOUT  = 25       # giây mỗi request
+MAX_ITEMS_PER_RSS = 8       # số tin tối đa lấy từ mỗi RSS feed
+MAX_CHARS_JINA   = 4000     # ký tự tối đa từ Jina fallback
+MAX_CHARS_FULL   = 6000     # ký tự tối đa khi đọc full bài
+JINA_BASE        = "https://r.jina.ai/"
 
-# Jina Reader: chuyển URL bất kỳ → markdown sạch (miễn phí)
-JINA_BASE = "https://r.jina.ai/"
+# Keyword nhận diện tin quan trọng → fetch full nội dung
+IMPORTANT_KEYWORDS = [
+    # Lãnh đạo VN
+    "tô lâm", "lê minh hưng", "trần thanh mẫn", "nguyễn tấn dũng",
+    "thủ tướng", "tổng bí thư", "chủ tịch nước", "chủ tịch quốc hội",
+    "phó thủ tướng", "bộ trưởng",
+    # Lãnh đạo Mỹ
+    "trump", "donald trump", "white house", "nhà trắng",
+    # Chính sách VN
+    "nghị quyết", "nghị định", "thông tư", "luật", "quyết định",
+    "nhnn", "ngân hàng nhà nước", "bộ tài chính", "lãi suất",
+    "tỷ giá", "tín dụng", "room",
+    # Địa phương
+    "hưng yên", "hồ chí minh", "hà nội",
+    # Kinh tế
+    "fed", "federal reserve", "cpi", "lạm phát", "nfp", "gdp",
+    "vàng tăng", "vàng giảm", "dầu tăng", "dầu giảm",
+    # Địa chính trị
+    "chiến tranh", "xung đột", "trừng phạt", "thuế quan", "tariff",
+    "dịch bệnh", "bùng phát", "thiên tai", "bão",
+]
 
-# Timeout mỗi request (giây)
-REQUEST_TIMEOUT = 20
-
-# Số ký tự tối đa lấy từ mỗi nguồn (tránh file quá nặng)
-MAX_CHARS_PER_SOURCE = 3000
-
-# ── Định nghĩa 14 nhóm thông tin ─────────────────────────────────────────────
+# ── Định nghĩa 14 nhóm với RSS + Jina ────────────────────────────────────────
 
 GROUPS = [
     {
-        "id": 1,
+        "id": 1, "icon": "🏥",
         "name": "Dịch bệnh & Thiên tai Thế giới và Việt Nam",
-        "icon": "🏥",
         "sources": [
-            {"name": "WHO Disease Outbreak News", "url": "https://www.who.int/emergencies/disease-outbreak-news"},
-            {"name": "ReliefWeb Disasters VN", "url": "https://reliefweb.int/country/vnm"},
-            {"name": "VnExpress Sức khỏe", "url": "https://vnexpress.net/suc-khoe"},
+            {"name": "WHO Outbreaks",        "rss": "https://www.who.int/feeds/entity/emergencies/disease-outbreak-news/en/rss.xml"},
+            {"name": "ReliefWeb Vietnam",    "rss": "https://reliefweb.int/country/vnm/rss.xml"},
+            {"name": "VnExpress Sức khỏe",   "rss": "https://vnexpress.net/rss/suc-khoe.rss"},
         ],
     },
     {
-        "id": 2,
+        "id": 2, "icon": "🌍",
         "name": "Địa chính trị Thế giới",
-        "icon": "🌍",
         "sources": [
-            {"name": "Reuters World News", "url": "https://www.reuters.com/world/"},
-            {"name": "Al Jazeera", "url": "https://www.aljazeera.com/"},
-            {"name": "BBC World", "url": "https://www.bbc.com/news/world"},
+            {"name": "Reuters World",        "rss": "https://feeds.reuters.com/reuters/worldNews"},
+            {"name": "Al Jazeera",           "rss": "https://www.aljazeera.com/xml/rss/all.xml"},
+            {"name": "BBC World",            "rss": "http://feeds.bbci.co.uk/news/world/rss.xml"},
         ],
     },
     {
-        "id": 3,
+        "id": 3, "icon": "💹",
         "name": "Kinh tế & Tài chính Thế giới",
-        "icon": "💹",
         "sources": [
-            {"name": "Reuters Business", "url": "https://www.reuters.com/business/"},
-            {"name": "Trading Economics World", "url": "https://tradingeconomics.com/"},
-            {"name": "CafeF Thế giới", "url": "https://cafef.vn/kinh-te-the-gioi.chn"},
+            {"name": "Reuters Business",     "rss": "https://feeds.reuters.com/reuters/businessNews"},
+            {"name": "CafeF Thế giới",       "rss": "https://cafef.vn/kinh-te-the-gioi.rss"},
+            {"name": "VnExpress Kinh doanh", "rss": "https://vnexpress.net/rss/kinh-doanh.rss"},
         ],
     },
     {
-        "id": 4,
+        "id": 4, "icon": "📦",
         "name": "Thị trường Hàng hóa Thế giới và Việt Nam",
-        "icon": "📦",
         "sources": [
-            {"name": "Trading Economics Commodities", "url": "https://tradingeconomics.com/commodity"},
-            {"name": "CafeF Hàng hóa", "url": "https://cafef.vn/hang-hoa.chn"},
-            {"name": "VnExpress Kinh doanh", "url": "https://vnexpress.net/kinh-doanh"},
+            {"name": "CafeF Hàng hóa",       "rss": "https://cafef.vn/hang-hoa.rss"},
+            {"name": "Trading Economics Commodities", "jina": "https://tradingeconomics.com/commodity"},
         ],
     },
     {
-        "id": 5,
+        "id": 5, "icon": "🥇",
         "name": "Vàng & Bạc Thế giới và Việt Nam",
-        "icon": "🥇",
         "sources": [
-            {"name": "Kitco Gold Silver", "url": "https://www.kitco.com/"},
-            {"name": "Giá vàng SJC", "url": "https://sjc.com.vn/"},
-            {"name": "DOJI giá vàng", "url": "https://doji.vn/gia-vang/"},
+            {"name": "Kitco Gold News",      "rss": "https://www.kitco.com/rss/NewsRss.xml"},
+            {"name": "CafeF Vàng",           "rss": "https://cafef.vn/vang.rss"},
+            {"name": "Giá vàng SJC",         "jina": "https://sjc.com.vn/"},
         ],
     },
     {
-        "id": 6,
+        "id": 6, "icon": "🏦",
         "name": "Lãi suất Mỹ — Fed",
-        "icon": "🏦",
         "sources": [
-            {"name": "Federal Reserve News", "url": "https://www.federalreserve.gov/newsevents/pressreleases.htm"},
-            {"name": "CME FedWatch Tool", "url": "https://www.cmegroup.com/markets/interest-rates/cme-fedwatch-tool.html"},
-            {"name": "Trading Economics Fed Rate", "url": "https://tradingeconomics.com/united-states/interest-rate"},
+            {"name": "Fed Press Releases",   "jina": "https://www.federalreserve.gov/newsevents/pressreleases.htm"},
+            {"name": "Trading Economics Fed Rate", "jina": "https://tradingeconomics.com/united-states/interest-rate"},
         ],
     },
     {
-        "id": 7,
+        "id": 7, "icon": "👷",
         "name": "Lao động Mỹ — NFP & Thất nghiệp",
-        "icon": "👷",
         "sources": [
-            {"name": "BLS News Releases", "url": "https://www.bls.gov/news.release/"},
-            {"name": "Trading Economics US Labor", "url": "https://tradingeconomics.com/united-states/unemployment-rate"},
+            {"name": "BLS News Releases",    "jina": "https://www.bls.gov/bls/news-release/home.htm"},
+            {"name": "Trading Economics US Jobs", "jina": "https://tradingeconomics.com/united-states/unemployment-rate"},
         ],
     },
     {
-        "id": 8,
+        "id": 8, "icon": "📈",
         "name": "Lạm phát & CPI Mỹ",
-        "icon": "📈",
         "sources": [
-            {"name": "BLS CPI Summary", "url": "https://www.bls.gov/cpi/"},
-            {"name": "Trading Economics US CPI", "url": "https://tradingeconomics.com/united-states/inflation-cpi"},
+            {"name": "BLS CPI",              "jina": "https://www.bls.gov/cpi/"},
+            {"name": "Trading Economics CPI","jina": "https://tradingeconomics.com/united-states/inflation-cpi"},
         ],
     },
     {
-        "id": 9,
+        "id": 9, "icon": "🛢️",
         "name": "Giá dầu Thế giới và Việt Nam",
-        "icon": "🛢️",
         "sources": [
-            {"name": "EIA Oil Price", "url": "https://www.eia.gov/petroleum/"},
-            {"name": "Trading Economics Crude Oil", "url": "https://tradingeconomics.com/commodity/crude-oil"},
-            {"name": "CafeF Dầu khí", "url": "https://cafef.vn/dau-khi.chn"},
+            {"name": "EIA Petroleum",        "jina": "https://www.eia.gov/petroleum/"},
+            {"name": "CafeF Dầu khí",        "rss": "https://cafef.vn/dau-khi.rss"},
+            {"name": "Trading Economics Oil","jina": "https://tradingeconomics.com/commodity/crude-oil"},
         ],
     },
     {
-        "id": 10,
+        "id": 10, "icon": "📜",
         "name": "Văn bản pháp luật Việt Nam",
-        "icon": "📜",
         "sources": [
-            {"name": "Thư viện Pháp luật", "url": "https://thuvienphapluat.vn/van-ban/moi-nhat"},
-            {"name": "Cổng Chính phủ - Văn bản", "url": "https://vanban.chinhphu.vn/"},
+            {"name": "Thư viện Pháp luật",   "rss": "https://thuvienphapluat.vn/rss/van-ban-moi.aspx"},
+            {"name": "Cổng Chính phủ VB",    "jina": "https://vanban.chinhphu.vn/"},
         ],
     },
     {
-        "id": 11,
+        "id": 11, "icon": "🏛️",
         "name": "Chính sách Tài chính – Ngân hàng Việt Nam",
-        "icon": "🏛️",
         "sources": [
-            {"name": "NHNN - Ngân hàng Nhà nước", "url": "https://www.sbv.gov.vn/webcenter/portal/vi/menu/trangchu"},
-            {"name": "Bộ Tài chính", "url": "https://www.mof.gov.vn/webcenter/portal/vclvcstc"},
-            {"name": "CafeF Ngân hàng", "url": "https://cafef.vn/ngan-hang.chn"},
+            {"name": "NHNN",                 "jina": "https://www.sbv.gov.vn/webcenter/portal/vi/menu/trangchu"},
+            {"name": "Bộ Tài chính",         "rss": "https://mof.gov.vn/webcenter/content/conn/WCRepository/path/Contribution%20Folders/MOF/RSS/rss_mof.xml"},
+            {"name": "CafeF Ngân hàng",      "rss": "https://cafef.vn/ngan-hang.rss"},
         ],
     },
     {
-        "id": 12,
+        "id": 12, "icon": "💱",
         "name": "Tỷ giá VND/USD",
-        "icon": "💱",
         "sources": [
-            {"name": "Vietcombank Tỷ giá", "url": "https://vietcombank.com.vn/ExchangeRates"},
-            {"name": "Trading Economics USD/VND", "url": "https://tradingeconomics.com/usdt-vnd:cur"},
-            {"name": "NHNN Tỷ giá trung tâm", "url": "https://www.sbv.gov.vn/webcenter/portal/vi/menu/trangchu/tkttnh/tghtnnh"},
+            {"name": "Vietcombank Tỷ giá",   "jina": "https://vietcombank.com.vn/ExchangeRates"},
+            {"name": "CafeF Tài chính",      "rss": "https://cafef.vn/tai-chinh-chung-khoan.rss"},
         ],
     },
     {
-        "id": 13,
+        "id": 13, "icon": "🎙️",
         "name": "Phát biểu & Ý chí lãnh đạo Việt Nam",
-        "icon": "🎙️",
-        "note": "Theo dõi: Tô Lâm (TBT kiêm CTN), Trần Thanh Mẫn (CT QH), Lê Minh Hưng (Thủ tướng), Nguyễn Tấn Dũng, các Phó Thủ tướng",
+        "note": "Tô Lâm · Trần Thanh Mẫn · Lê Minh Hưng · Nguyễn Tấn Dũng · Phó Thủ tướng",
         "sources": [
-            {"name": "Cổng Chính phủ", "url": "https://chinhphu.vn/"},
-            {"name": "Quốc hội Việt Nam", "url": "https://quochoi.vn/"},
-            {"name": "Nhân dân - Lãnh đạo", "url": "https://nhandan.vn/chinh-tri"},
-            {"name": "VnExpress Chính trị", "url": "https://vnexpress.net/chinh-tri"},
+            {"name": "Cổng Chính phủ",       "rss": "https://chinhphu.vn/tin-tuc-su-kien/rss"},
+            {"name": "Quốc hội",             "rss": "https://quochoi.vn/rss/"},
+            {"name": "Nhân dân Chính trị",   "rss": "https://nhandan.vn/rss/chinh-tri.rss"},
+            {"name": "VnExpress Chính trị",  "rss": "https://vnexpress.net/rss/chinh-tri-xa-hoi.rss"},
         ],
     },
     {
-        "id": 14,
+        "id": 14, "icon": "🗺️",
         "name": "Trump & Chính sách Hưng Yên / HCM / Hà Nội",
-        "icon": "🏛️",
-        "note": "Theo dõi: Phát biểu Donald Trump + Nghị quyết phát triển 3 địa phương",
+        "note": "Donald Trump phát biểu + Nghị quyết phát triển 3 địa phương",
         "sources": [
-            {"name": "White House News", "url": "https://www.whitehouse.gov/news/"},
-            {"name": "Hưng Yên Portal", "url": "https://hungyen.gov.vn/"},
-            {"name": "HCMC Portal", "url": "https://www.hochiminhcity.gov.vn/"},
-            {"name": "Hà Nội Portal", "url": "https://hanoi.gov.vn/"},
+            {"name": "White House",          "rss": "https://www.whitehouse.gov/feed/"},
+            {"name": "Hưng Yên Portal",      "jina": "https://hungyen.gov.vn/"},
+            {"name": "HCM Portal",           "jina": "https://www.hochiminhcity.gov.vn/"},
+            {"name": "Hà Nội Portal",        "jina": "https://hanoi.gov.vn/"},
         ],
     },
 ]
 
-# ── Hàm thu thập dữ liệu ──────────────────────────────────────────────────────
+# ── Hàm RSS ───────────────────────────────────────────────────────────────────
 
-def fetch_via_jina(url: str) -> str:
-    """Lấy nội dung URL qua Jina Reader (free, không cần API key)."""
-    jina_url = JINA_BASE + url
+def fetch_rss(url: str) -> list[dict]:
+    """Parse RSS feed → list of {title, link, summary, published}"""
     req = urllib.request.Request(
-        jina_url,
-        headers={
-            "User-Agent": "Mozilla/5.0 Vietnam-Intelligence-Collector/1.0",
-            "Accept": "text/plain, text/markdown, */*",
-        }
+        url,
+        headers={"User-Agent": "Mozilla/5.0 VietnamIntelligence/2.0",
+                 "Accept": "application/rss+xml, application/xml, text/xml, */*"}
     )
     try:
         with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT) as resp:
-            content = resp.read().decode("utf-8", errors="replace")
-            # Cắt bớt nếu quá dài
-            return content[:MAX_CHARS_PER_SOURCE]
-    except urllib.error.HTTPError as e:
-        return f"[Lỗi HTTP {e.code}: {e.reason}]"
-    except urllib.error.URLError as e:
-        return f"[Lỗi kết nối: {e.reason}]"
+            raw = resp.read()
+        root = ET.fromstring(raw)
     except Exception as e:
-        return f"[Lỗi: {str(e)[:100]}]"
+        return [{"error": str(e)[:120]}]
+
+    ns = {"atom": "http://www.w3.org/2005/Atom"}
+    items = []
+
+    # RSS 2.0
+    for item in root.findall(".//item"):
+        title   = (item.findtext("title") or "").strip()
+        link    = (item.findtext("link")  or "").strip()
+        summary = (item.findtext("description") or
+                   item.findtext("summary") or "").strip()
+        pubdate = (item.findtext("pubDate") or
+                   item.findtext("published") or "").strip()
+        # Bỏ HTML tags trong summary
+        summary = re.sub(r"<[^>]+>", " ", summary)
+        summary = re.sub(r"\s+", " ", summary).strip()[:400]
+        items.append({"title": title, "link": link,
+                      "summary": summary, "published": pubdate})
+        if len(items) >= MAX_ITEMS_PER_RSS:
+            break
+
+    # Atom feed (nếu không có item)
+    if not items:
+        for entry in root.findall(".//atom:entry", ns):
+            title   = (entry.findtext("atom:title", namespaces=ns) or "").strip()
+            link_el = entry.find("atom:link", ns)
+            link    = link_el.get("href", "") if link_el is not None else ""
+            summary = (entry.findtext("atom:summary", namespaces=ns) or
+                       entry.findtext("atom:content", namespaces=ns) or "").strip()
+            pubdate = (entry.findtext("atom:published", namespaces=ns) or "").strip()
+            summary = re.sub(r"<[^>]+>", " ", summary)
+            summary = re.sub(r"\s+", " ", summary).strip()[:400]
+            items.append({"title": title, "link": link,
+                          "summary": summary, "published": pubdate})
+            if len(items) >= MAX_ITEMS_PER_RSS:
+                break
+
+    return items
 
 
-def clean_content(raw: str) -> str:
-    """Làm sạch nội dung crawl — bỏ noise, giữ lại phần có giá trị."""
-    if raw.startswith("[Lỗi"):
-        return raw
+# ── Hàm Jina ──────────────────────────────────────────────────────────────────
 
-    # Bỏ các dòng quá ngắn (menu, navigation)
-    lines = raw.split("\n")
-    cleaned = []
+def fetch_jina(url: str, max_chars: int = MAX_CHARS_JINA) -> str:
+    """Dùng Jina Reader để lấy nội dung trang web dạng markdown."""
+    req = urllib.request.Request(
+        JINA_BASE + url,
+        headers={"User-Agent": "Mozilla/5.0 VietnamIntelligence/2.0",
+                 "Accept": "text/plain, text/markdown, */*"}
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT) as resp:
+            raw = resp.read().decode("utf-8", errors="replace")
+        return clean_jina(raw)[:max_chars]
+    except Exception as e:
+        return f"[Lỗi Jina: {str(e)[:100]}]"
+
+
+def clean_jina(text: str) -> str:
+    """Lọc noise từ Jina output — giữ lại phần có giá trị."""
+    lines = text.split("\n")
+    out = []
     for line in lines:
-        stripped = line.strip()
-        if len(stripped) < 15:
+        s = line.strip()
+        if len(s) < 20:
             continue
-        # Bỏ dòng chỉ toàn URL
-        if stripped.startswith("http") and " " not in stripped:
+        if s.startswith("http") and " " not in s:
             continue
-        # Bỏ dòng markdown toàn dấu ===, ---
-        if re.match(r'^[=\-_*]{3,}$', stripped):
+        if re.match(r"^[=\-_*#]{3,}$", s):
             continue
-        cleaned.append(stripped)
+        if any(noise in s.lower() for noise in
+               ["cookie", "javascript", "subscribe", "sign in", "log in",
+                "advertisement", "quảng cáo", "đăng nhập", "đăng ký"]):
+            continue
+        out.append(s)
+    return "\n".join(out[:100])
 
-    result = "\n".join(cleaned[:80])  # Giữ tối đa 80 dòng đầu có nội dung
-    return result[:MAX_CHARS_PER_SOURCE]
+
+# ── Nhận diện tin quan trọng → fetch full ─────────────────────────────────────
+
+def is_important(title: str, summary: str) -> bool:
+    """Kiểm tra xem tin có đủ quan trọng để fetch full không."""
+    text = (title + " " + summary).lower()
+    return any(kw in text for kw in IMPORTANT_KEYWORDS)
+
+
+def fetch_full_article(url: str) -> str:
+    """Fetch full nội dung bài báo quan trọng qua Jina."""
+    if not url or not url.startswith("http"):
+        return ""
+    content = fetch_jina(url, max_chars=MAX_CHARS_FULL)
+    if content.startswith("[Lỗi"):
+        return ""
+    return content
+
+
+# ── Xử lý từng nguồn ─────────────────────────────────────────────────────────
+
+def process_source(source: dict) -> dict:
+    """Xử lý 1 nguồn: RSS hoặc Jina, kèm full article nếu quan trọng."""
+    result = {"name": source["name"], "mode": "", "items": [],
+              "jina_content": "", "ok": False, "important_count": 0}
+
+    # ── RSS mode ──
+    if "rss" in source:
+        result["mode"] = "RSS"
+        items = fetch_rss(source["rss"])
+
+        if items and "error" not in items[0]:
+            result["ok"] = True
+            for item in items:
+                # Fetch full nếu quan trọng
+                full = ""
+                if is_important(item.get("title",""), item.get("summary","")):
+                    full = fetch_full_article(item.get("link",""))
+                    if full:
+                        result["important_count"] += 1
+                        time.sleep(1)
+                item["full"] = full
+            result["items"] = items
+        else:
+            err = items[0].get("error","") if items else "Không có data"
+            result["items"] = [{"error": err}]
+
+    # ── Jina mode ──
+    elif "jina" in source:
+        result["mode"] = "Jina"
+        content = fetch_jina(source["jina"])
+        if not content.startswith("[Lỗi"):
+            result["ok"] = True
+        result["jina_content"] = content
+
+    return result
 
 
 def collect_group(group: dict) -> dict:
     """Thu thập toàn bộ nguồn trong một nhóm."""
-    results = []
+    sources_data = []
     for source in group["sources"]:
-        print(f"  → Fetching: {source['name']}...")
-        raw = fetch_via_jina(source["url"])
-        content = clean_content(raw)
-        results.append({
-            "source": source["name"],
-            "url": source["url"],
-            "content": content,
-            "ok": not content.startswith("[Lỗi"),
-        })
-        time.sleep(1.5)  # Tránh rate limit
-    return results
+        mode = "RSS" if "rss" in source else "Jina"
+        print(f"  [{mode}] {source['name']}...")
+        data = process_source(source)
+        sources_data.append(data)
+        time.sleep(1.2)
+    return {"group": group, "sources": sources_data}
 
 
-# ── Hàm tạo file Markdown output ─────────────────────────────────────────────
+# ── Build Markdown ─────────────────────────────────────────────────────────────
 
-def build_markdown(all_data: list, run_time: datetime.datetime) -> str:
-    """Tạo nội dung file .md từ dữ liệu đã thu thập."""
-
-    time_str = run_time.strftime("%Y-%m-%d %H:%M ICT")
-    date_str = run_time.strftime("%Y-%m-%d")
-    hour_str = run_time.strftime("%H:%M")
-
+def build_markdown(all_data: list, vn_now: datetime.datetime) -> str:
+    time_str = vn_now.strftime("%Y-%m-%d %H:%M ICT")
     lines = [
-        f"# 🇻🇳 Vietnam Intelligence Report",
-        f"",
-        f"> **Thời gian thu thập:** {time_str}  ",
-        f"> **Chu kỳ:** Tự động mỗi 1 tiếng — GitHub Actions  ",
-        f"> **Nguồn:** Jina Reader (free crawl)  ",
-        f"> **Dùng cho:** AI Investment Team — paste vào Claude khi cần",
-        f"",
-        f"---",
-        f"",
+        "# 🇻🇳 Vietnam Intelligence Report",
+        "",
+        f"> **Thời gian:** {time_str}  ",
+        "> **Chu kỳ:** Tự động mỗi 1 tiếng — GitHub Actions  ",
+        "> **Format:** RSS headline + tóm tắt + full article nếu tin quan trọng",
+        "> **Dùng cho:** AI Investment Team",
+        "",
+        "---", "",
     ]
 
-    for group_data in all_data:
-        group = group_data["group"]
-        sources_data = group_data["sources"]
+    total_items = 0
+    total_important = 0
+
+    for gd in all_data:
+        group = gd["group"]
+        sources = gd["sources"]
 
         lines.append(f"## {group['icon']} Nhóm {group['id']}: {group['name']}")
         lines.append("")
-
         if "note" in group:
             lines.append(f"*{group['note']}*")
             lines.append("")
 
-        ok_count = sum(1 for s in sources_data if s["ok"])
-        lines.append(f"*Thu thập từ {len(sources_data)} nguồn — {ok_count} thành công*")
+        ok_count = sum(1 for s in sources if s["ok"])
+        lines.append(f"*{len(sources)} nguồn — {ok_count} thành công*")
         lines.append("")
 
-        for src in sources_data:
+        for src in sources:
             status = "✅" if src["ok"] else "❌"
-            lines.append(f"### {status} {src['source']}")
-            lines.append(f"*Nguồn: {src['url']}*")
+            lines.append(f"### {status} {src['name']} `[{src['mode']}]`")
             lines.append("")
-            if src["ok"] and src["content"]:
-                # Chỉ lấy 60 dòng đầu mỗi nguồn trong file tổng hợp
-                content_lines = src["content"].split("\n")[:60]
-                lines.append("\n".join(content_lines))
-            else:
-                lines.append(f"_{src['content']}_")
-            lines.append("")
+
+            # RSS items
+            if src["mode"] == "RSS":
+                if src["items"] and "error" not in src["items"][0]:
+                    n_imp = src.get("important_count", 0)
+                    total_items += len(src["items"])
+                    total_important += n_imp
+                    if n_imp:
+                        lines.append(f"*{len(src['items'])} tin — {n_imp} tin quan trọng (đã đọc full)*")
+                    else:
+                        lines.append(f"*{len(src['items'])} tin mới nhất*")
+                    lines.append("")
+
+                    for i, item in enumerate(src["items"], 1):
+                        title = item.get("title", "No title")
+                        link  = item.get("link", "")
+                        summ  = item.get("summary", "")
+                        pub   = item.get("published", "")
+                        full  = item.get("full", "")
+
+                        # Headline
+                        if link:
+                            lines.append(f"**{i}. [{title}]({link})**")
+                        else:
+                            lines.append(f"**{i}. {title}**")
+
+                        # Thời gian
+                        if pub:
+                            lines.append(f"*{pub[:50]}*")
+
+                        # Tóm tắt 2-3 dòng
+                        if summ:
+                            lines.append(f"> {summ[:300]}")
+
+                        # Full content nếu quan trọng
+                        if full:
+                            lines.append("")
+                            lines.append("📌 **Nội dung đầy đủ (tin quan trọng):**")
+                            lines.append("")
+                            lines.append(full[:MAX_CHARS_FULL])
+
+                        lines.append("")
+
+                elif src["items"] and "error" in src["items"][0]:
+                    lines.append(f"*Lỗi RSS: {src['items'][0]['error']}*")
+                    lines.append("")
+                else:
+                    lines.append("*Không có tin mới*")
+                    lines.append("")
+
+            # Jina content
+            elif src["mode"] == "Jina":
+                content = src.get("jina_content", "")
+                if content and not content.startswith("[Lỗi"):
+                    lines.append(content)
+                else:
+                    lines.append(f"*{content}*")
+                lines.append("")
+
             lines.append("---")
             lines.append("")
 
-    # Footer tóm tắt
-    total_sources = sum(len(g["sources"]) for g in all_data)
-    total_ok = sum(sum(1 for s in g["sources"] if s["ok"]) for g in all_data)
-
-    lines.append(f"## 📊 Tóm tắt thu thập")
-    lines.append("")
-    lines.append(f"| Chỉ tiêu | Kết quả |")
-    lines.append(f"|---|---|")
-    lines.append(f"| Tổng số nguồn | {total_sources} |")
-    lines.append(f"| Thu thập thành công | {total_ok} |")
-    lines.append(f"| Thất bại | {total_sources - total_ok} |")
-    lines.append(f"| Thời gian | {time_str} |")
-    lines.append("")
-    lines.append(f"*Report tự động tạo bởi Vietnam Intelligence Collector — github.com/TrangMinh0204/Macro-Data*")
+    # Footer
+    lines += [
+        "## 📊 Tóm tắt",
+        "",
+        f"| Chỉ tiêu | Kết quả |",
+        f"|---|---|",
+        f"| Tổng tin RSS thu thập | {total_items} |",
+        f"| Tin quan trọng (đọc full) | {total_important} |",
+        f"| Thời gian | {time_str} |",
+        "",
+        "*Report tự động — github.com/TrangMinh0204/Macro-Data*",
+    ]
 
     return "\n".join(lines)
+
+
+# ── Index ──────────────────────────────────────────────────────────────────────
+
+def update_index(index_file: Path, date_str: str,
+                 hour_str: str, vn_now: datetime.datetime):
+    time_str = vn_now.strftime("%Y-%m-%d %H:%M ICT")
+    entry = f"- [{time_str}](output/{date_str}/{hour_str}.md)"
+    if index_file.exists():
+        existing = index_file.read_text(encoding="utf-8")
+        lines = existing.split("\n")
+        insert_at = next(
+            (i for i, l in enumerate(lines) if l.startswith("- [")), 5)
+        lines.insert(insert_at, entry)
+        index_file.write_text("\n".join(lines), encoding="utf-8")
+    else:
+        index_file.write_text(
+            f"# Vietnam Intelligence — Index\n\n"
+            f"Danh sách report tự động theo giờ.\n\n{entry}\n",
+            encoding="utf-8"
+        )
 
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 def main():
-    # Tính giờ Việt Nam (ICT = UTC+7)
     utc_now = datetime.datetime.utcnow()
-    vn_now = utc_now + datetime.timedelta(hours=TIMEZONE_OFFSET)
-
+    vn_now  = utc_now + datetime.timedelta(hours=TIMEZONE_OFFSET)
     date_str = vn_now.strftime("%Y-%m-%d")
     hour_str = vn_now.strftime("%H-%M")
 
     print(f"\n{'='*60}")
-    print(f"Vietnam Intelligence Collector")
+    print(f"Vietnam Intelligence Collector v2")
     print(f"Thời gian: {vn_now.strftime('%Y-%m-%d %H:%M ICT')}")
+    print(f"Mode: RSS + Jina + Full article cho tin quan trọng")
     print(f"{'='*60}\n")
 
-    # Tạo thư mục output
-    output_dir = Path("output") / date_str
+    output_dir  = Path("output") / date_str
     output_dir.mkdir(parents=True, exist_ok=True)
     output_file = output_dir / f"{hour_str}.md"
 
-    # Thu thập từng nhóm
     all_data = []
     for group in GROUPS:
         print(f"\n[Nhóm {group['id']}] {group['icon']} {group['name']}")
-        sources_data = collect_group(group)
-        all_data.append({"group": group, "sources": sources_data})
+        gd = collect_group(group)
+        all_data.append(gd)
 
-    # Tạo file markdown
     print(f"\n{'='*60}")
     print(f"Tạo file: {output_file}")
-    md_content = build_markdown(all_data, vn_now)
-    output_file.write_text(md_content, encoding="utf-8")
+    md = build_markdown(all_data, vn_now)
+    output_file.write_text(md, encoding="utf-8")
 
-    # Tạo file index (danh sách các report theo ngày)
-    index_file = Path("output") / "INDEX.md"
-    update_index(index_file, date_str, hour_str, vn_now)
+    update_index(Path("output") / "INDEX.md", date_str, hour_str, vn_now)
 
-    print(f"✅ Hoàn thành! File: {output_file}")
-    print(f"   Kích thước: {len(md_content):,} ký tự")
-
-
-def update_index(index_file: Path, date_str: str, hour_str: str, vn_now: datetime.datetime):
-    """Cập nhật file INDEX.md — danh sách toàn bộ report."""
-    time_str = vn_now.strftime("%Y-%m-%d %H:%M ICT")
-    entry = f"- [{time_str}](output/{date_str}/{hour_str}.md)"
-
-    if index_file.exists():
-        existing = index_file.read_text(encoding="utf-8")
-        # Thêm entry mới vào đầu (sau header)
-        lines = existing.split("\n")
-        # Tìm vị trí sau header (dòng đầu tiên bắt đầu bằng -)
-        insert_at = 5  # Sau header ~5 dòng
-        for i, line in enumerate(lines):
-            if line.startswith("- ["):
-                insert_at = i
-                break
-        lines.insert(insert_at, entry)
-        index_file.write_text("\n".join(lines), encoding="utf-8")
-    else:
-        content = f"""# Vietnam Intelligence — Index
-
-Danh sách toàn bộ report tự động theo giờ.
-
-{entry}
-"""
-        index_file.write_text(content, encoding="utf-8")
+    print(f"✅ Xong! Kích thước: {len(md):,} ký tự")
 
 
 if __name__ == "__main__":
