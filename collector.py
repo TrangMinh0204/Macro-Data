@@ -223,22 +223,39 @@ def get_us_jobs() -> dict:
 # ══════════════════════════════════════════════════════════════════
 
 RSS_SOURCES = [
-    # Quốc tế
-    {"group": 2, "name": "The Guardian World",    "url": "https://www.theguardian.com/world/rss"},
-    {"group": 2, "name": "BBC World News",         "url": "https://feeds.bbci.co.uk/news/world/rss.xml"},
-    {"group": 2, "name": "RFI English",            "url": "https://www.rfi.fr/en/rss"},
-    {"group": 3, "name": "The Guardian Business",  "url": "https://www.theguardian.com/business/rss"},
-    {"group": 3, "name": "BBC Business",           "url": "https://feeds.bbci.co.uk/news/business/rss.xml"},
-    # Việt Nam — chỉ dùng nguồn RSS thực sự hoạt động
-    {"group": 3, "name": "VnExpress Kinh doanh",  "url": "https://vnexpress.net/rss/kinh-doanh.rss"},
-    {"group": 3, "name": "VnExpress Thời sự",     "url": "https://vnexpress.net/rss/thoi-su.rss"},
-    {"group":13, "name": "VnExpress Thế giới",    "url": "https://vnexpress.net/rss/the-gioi.rss"},
-    {"group":13, "name": "VnExpress Góc nhìn",    "url": "https://vnexpress.net/rss/goc-nhin.rss"},
-    # Dịch bệnh
-    {"group": 1, "name": "ProMED Mail",            "url": "https://promedmail.org/feed/"},
-    {"group": 1, "name": "CDC Health Updates",     "url": "https://tools.cdc.gov/api/v2/resources/media/316422.rss"},
-    # Trump / Địa chính trị Mỹ
-    {"group":14, "name": "White House Briefings",  "url": "https://www.whitehouse.gov/briefing-room/feed/"},
+    # ── Quốc tế ───────────────────────────────────────────────────
+    {"group": 2, "name": "The Guardian World",         "url": "https://www.theguardian.com/world/rss"},
+    {"group": 2, "name": "BBC World News",              "url": "https://feeds.bbci.co.uk/news/world/rss.xml"},
+    {"group": 2, "name": "RFI English",                 "url": "https://www.rfi.fr/en/rss"},
+    {"group": 3, "name": "The Guardian Business",       "url": "https://www.theguardian.com/business/rss"},
+    {"group": 3, "name": "BBC Business",                "url": "https://feeds.bbci.co.uk/news/business/rss.xml"},
+
+    # ── Việt Nam tin tức ──────────────────────────────────────────
+    {"group": 3, "name": "VnExpress Kinh doanh",       "url": "https://vnexpress.net/rss/kinh-doanh.rss"},
+    {"group": 3, "name": "VnExpress Thời sự",          "url": "https://vnexpress.net/rss/thoi-su.rss"},
+    {"group":13, "name": "VnExpress Thế giới",         "url": "https://vnexpress.net/rss/the-gioi.rss"},
+    {"group":13, "name": "VnExpress Góc nhìn",         "url": "https://vnexpress.net/rss/goc-nhin.rss"},
+
+    # ── Chính phủ VN — Chỉ đạo điều hành (nhóm 10) ───────────────
+    {"group":10, "name": "ChinhPhu Chỉ đạo điều hành", "jina": "https://chinhphu.vn/chi-dao-quyet-dinh-cua-chinh-phu-thu-tuong-chinh-phu"},
+    {"group":10, "name": "ChinhPhu Thông cáo BC",       "jina": "https://baochinhphu.vn/thong-cao-bao-chi.htm"},
+    {"group":10, "name": "ChinhPhu Hệ thống văn bản",   "jina": "https://chinhphu.vn/chinh-phu"},
+    {"group":10, "name": "VanBan ChinhPhu",              "jina": "https://vanban.chinhphu.vn/"},
+    {"group":10, "name": "BaoChinhPhu Chỉ đạo ĐH",     "jina": "https://baochinhphu.vn/chi-dao-dieu-hanh.htm"},
+
+    # ── Lãnh đạo VN (nhóm 13) ────────────────────────────────────
+    {"group":13, "name": "VTV Tổng Bí thư Tô Lâm",     "url": "https://vtv.vn/rss/dai-hoi-dang/tong-bi-thu-to-lam.rss"},
+    {"group":13, "name": "VTV Chính trị",                "url": "https://vtv.vn/rss/chinh-tri.rss"},
+    {"group":13, "name": "BaoChinhPhu Phát biểu Tô Lâm","jina": "https://baochinhphu.vn/chu-de/bai-viet-phat-bieu-cua-tong-bi-thu-to-lam-285.htm"},
+    {"group":13, "name": "BaoChinhPhu Phát biểu TT",    "jina": "https://chinhphu.vn/cac-bai-phat-bieu-cua-thu-tuong"},
+    {"group":13, "name": "BaoChinhPhu Họp báo CP",      "jina": "https://baochinhphu.vn/hop-bao-chinh-phu.htm"},
+
+    # ── Dịch bệnh ─────────────────────────────────────────────────
+    {"group": 1, "name": "ProMED Mail",                 "url": "https://promedmail.org/feed/"},
+    {"group": 1, "name": "CDC Health Updates",          "url": "https://tools.cdc.gov/api/v2/resources/media/316422.rss"},
+
+    # ── Trump / Địa chính trị Mỹ ─────────────────────────────────
+    {"group":14, "name": "White House Briefings",       "url": "https://www.whitehouse.gov/briefing-room/feed/"},
 ]
 
 
@@ -327,16 +344,56 @@ def fetch_full_article(url: str) -> str:
         return ""
 
 
+def fetch_jina_content(url: str) -> str:
+    """Fetch Jina và trả về text sạch."""
+    req = urllib.request.Request(JINA_BASE + url, headers=JINA_HEADERS)
+    try:
+        with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT) as resp:
+            raw = decompress(resp.read())
+            text = raw.decode("utf-8", errors="replace")
+        # Lọc noise
+        lines, out = text.split("\n"), []
+        noise = {"cookie","javascript","subscribe","sign in","log in",
+                 "advertisement","đăng nhập","đăng ký","skip to content",
+                 "toggle navigation","menu","weather","thời tiết"}
+        for line in lines:
+            s = line.strip()
+            if len(s) < 20: continue
+            if re.match(r'^https?://\S+$', s): continue
+            if re.match(r'^[=\-_*#|]{3,}$', s): continue
+            if any(n in s.lower() for n in noise): continue
+            out.append(s)
+        return "\n".join(out[:150])[:5000]
+    except Exception as e:
+        return f"[Lỗi Jina: {str(e)[:80]}]"
+
+
 def collect_all_rss() -> dict:
-    """Trả về dict {group_id: [items]}"""
+    """Trả về dict {group_id: {sources: [...]}}"""
     by_group = {}
     for src in RSS_SOURCES:
         gid = src["group"]
-        print(f"  [RSS] {src['name']}...")
-        items = fetch_rss(src["url"])
         if gid not in by_group:
             by_group[gid] = {"sources": []}
-        result = {"name": src["name"], "ok": False, "items": [], "important_count": 0}
+
+        # ── Jina source ──────────────────────────────────────────
+        if "jina" in src:
+            print(f"  [Jina] {src['name']}...")
+            content = fetch_jina_content(src["jina"])
+            result = {
+                "name": src["name"], "mode": "Jina",
+                "ok": not content.startswith("[Lỗi"),
+                "items": [], "jina_content": content, "important_count": 0
+            }
+            by_group[gid]["sources"].append(result)
+            time.sleep(1.0)
+            continue
+
+        # ── RSS source ───────────────────────────────────────────
+        print(f"  [RSS] {src['name']}...")
+        items = fetch_rss(src["url"])
+        result = {"name": src["name"], "mode": "RSS",
+                  "ok": False, "items": [], "important_count": 0}
         if items and "error" not in items[0]:
             result["ok"] = True
             enriched = []
@@ -431,6 +488,7 @@ def build_markdown(api_data: dict, rss_data: dict, vn_now: datetime.datetime) ->
         1:  ("🏥", "Dịch bệnh & Thiên tai"),
         2:  ("🌍", "Địa chính trị Thế giới"),
         3:  ("💹", "Kinh tế & Tài chính"),
+        10: ("📜", "Chỉ đạo điều hành & Văn bản Chính phủ"),
         13: ("🎙️", "Phát biểu & Ý chí lãnh đạo VN"),
         14: ("🗺️", "Trump & Chính sách địa phương"),
     }
@@ -453,30 +511,44 @@ def build_markdown(api_data: dict, rss_data: dict, vn_now: datetime.datetime) ->
 
         for src in gdata["sources"]:
             status = "✅" if src["ok"] else "❌"
-            lines.append(f"### {status} {src['name']} `[RSS]`")
+            mode = src.get("mode","RSS")
+            lines.append(f"### {status} {src['name']} `[{mode}]`")
             lines.append("")
-            items = src.get("items", [])
-            if items and "error" not in items[0]:
-                n  = len(items)
-                ni = src.get("important_count", 0)
-                total_items += n; total_imp += ni
-                lines.append(f"*{n} tin*" + (f" — *{ni} tin quan trọng (đọc full)*" if ni else ""))
+
+            # ── Jina content ──────────────────────────────────────
+            if mode == "Jina":
+                content = src.get("jina_content","")
+                if content and not content.startswith("[Lỗi"):
+                    lines.append(content)
+                else:
+                    lines.append(f"*{content}*")
                 lines.append("")
-                for i, item in enumerate(items, 1):
-                    t = item.get("title","")
-                    l = item.get("link","")
-                    s = item.get("summary","")
-                    p = item.get("published","")
-                    f = item.get("full","")
-                    lines.append(f"**{i}. [{t}]({l})**" if l else f"**{i}. {t}**")
-                    if p: lines.append(f"*{p}*")
-                    if s: lines.append(f"> {s[:300]}")
-                    if f: lines += ["", "📌 **Nội dung đầy đủ:**", f[:MAX_CHARS_ARTICLE], ""]
-                    lines.append("")
+
+            # ── RSS items ─────────────────────────────────────────
             else:
-                err = items[0].get("error","") if items else ""
-                lines.append(f"*❌ {err}*")
-                lines.append("")
+                items = src.get("items", [])
+                if items and "error" not in items[0]:
+                    n  = len(items)
+                    ni = src.get("important_count", 0)
+                    total_items += n; total_imp += ni
+                    lines.append(f"*{n} tin*" + (f" — *{ni} tin quan trọng (đọc full)*" if ni else ""))
+                    lines.append("")
+                    for i, item in enumerate(items, 1):
+                        t = item.get("title","")
+                        l = item.get("link","")
+                        s = item.get("summary","")
+                        p = item.get("published","")
+                        f = item.get("full","")
+                        lines.append(f"**{i}. [{t}]({l})**" if l else f"**{i}. {t}**")
+                        if p: lines.append(f"*{p}*")
+                        if s: lines.append(f"> {s[:300]}")
+                        if f: lines += ["", "📌 **Nội dung đầy đủ:**", f[:MAX_CHARS_ARTICLE], ""]
+                        lines.append("")
+                else:
+                    err = items[0].get("error","") if items else ""
+                    lines.append(f"*❌ {err}*")
+                    lines.append("")
+
             lines += ["---", ""]
 
     # ── FOOTER ──────────────────────────────────────────────────────
