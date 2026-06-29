@@ -143,6 +143,20 @@ def get_gold_prices() -> dict:
     result = {"xau_usd": None, "xag_usd": None,
               "sjc_vnd": None, "source": "", "error": ""}
 
+    # Nguồn 0: Metal Sentinel (15,000 req/tháng free) — ưu tiên cao nhất
+    try:
+        ms = get_metal_sentinel_gold()
+        if ms.get("xau_usd"):
+            result["xau_usd"] = ms["xau_usd"]
+            result["xag_usd"] = ms.get("xag_usd")
+            result["source"]  = "Metal Sentinel"
+            # Vẫn lấy SJC VN
+            sjc = get_sjc_gold_vn()
+            result["sjc_vnd"] = sjc.get("sell")
+            result["sjc_buy"] = sjc.get("buy")
+            return result
+    except: pass
+
     # Nguồn 1: open.er-api XAU base (truly no key required)
     try:
         data = fetch_json("https://open.er-api.com/v6/latest/XAU")
@@ -185,6 +199,179 @@ def get_gold_prices() -> dict:
 
     result["error"] = "Không lấy được giá vàng — thử lại sau"
     return result
+
+def get_who_outbreaks() -> list:
+    """WHO Disease Outbreak News — REST API chính thức, không cần key"""
+    try:
+        data = fetch_json("https://www.who.int/api/news/diseaseoutbreaknews")
+        items = data if isinstance(data, list) else data.get("value", data.get("items", []))
+        results = []
+        for item in items[:8]:
+            title   = item.get("title","") or item.get("Title","")
+            date    = item.get("publicationDate","") or item.get("PublicationDate","")
+            summary = item.get("summary","") or item.get("Summary","") or item.get("excerpt","")
+            country = item.get("countryTitle","") or item.get("country","")
+            url     = item.get("url","") or item.get("Url","")
+            if not title: continue
+            if isinstance(summary, str):
+                summary = summary[:300]
+            results.append({
+                "title":   title,
+                "date":    str(date)[:20],
+                "summary": summary,
+                "country": country,
+                "url":     url,
+            })
+        return results
+    except Exception as e:
+        return [{"error": str(e)[:100]}]
+
+
+def get_usgs_earthquakes() -> list:
+    """USGS Earthquake API — động đất >= M5.0 trong 24h qua, không cần key"""
+    try:
+        url = (
+            "https://earthquake.usgs.gov/fdsnws/event/1/query"
+            "?format=geojson&minmagnitude=5.0"
+            "&orderby=time&limit=10"
+            "&starttime={start}"
+        )
+        import datetime as _dt
+        start = (_dt.datetime.utcnow() - _dt.timedelta(hours=24)).strftime("%Y-%m-%dT%H:%M:%S")
+        data  = fetch_json(url.format(start=start))
+        features = data.get("features", [])
+        results  = []
+        for f in features[:8]:
+            p   = f.get("properties", {})
+            geo = f.get("geometry", {}).get("coordinates", [None, None, None])
+            results.append({
+                "title":   p.get("title",""),
+                "mag":     p.get("mag"),
+                "place":   p.get("place",""),
+                "time":    p.get("time"),
+                "depth_km": round(geo[2], 1) if geo[2] is not None else None,
+                "alert":   p.get("alert",""),
+                "url":     p.get("url",""),
+            })
+        return results
+    except Exception as e:
+        return [{"error": str(e)[:100]}]
+
+
+def get_gdelt_geopolitics() -> list:
+    """GDELT API — sự kiện địa chính trị Đông Nam Á & VN, cập nhật 15 phút, không cần key"""
+    results = []
+    queries = [
+        ("Vietnam geopolitics economy", "VN"),
+        ("Southeast Asia trade policy 2026", "SEA"),
+        ("US China trade war 2026", "US-CN"),
+    ]
+    for query, tag in queries:
+        try:
+            url = (
+                "https://api.gdeltproject.org/api/v2/doc/doc"
+                f"?query={urllib.parse.quote(query)}"
+                "&mode=artlist&maxrecords=5&format=json"
+                "&timespan=24h&sort=hybridrel"
+            )
+            data  = fetch_json(url)
+            arts  = data.get("articles", [])
+            for a in arts[:3]:
+                results.append({
+                    "tag":     tag,
+                    "title":   a.get("title",""),
+                    "url":     a.get("url",""),
+                    "source":  a.get("domain",""),
+                    "seendate": a.get("seendate",""),
+                    "tone":    a.get("tone"),
+                })
+            time.sleep(0.5)
+        except Exception as e:
+            results.append({"tag": tag, "error": str(e)[:80]})
+    return results
+
+
+def get_world_bank_vn() -> dict:
+    """World Bank API — GDP, CPI, FDI của VN, không cần key, CC-BY 4.0"""
+    result = {}
+    indicators = {
+        "GDP_USD":       "NY.GDP.MKTP.CD",
+        "GDP_growth":    "NY.GDP.MKTP.KD.ZG",
+        "inflation":     "FP.CPI.TOTL.ZG",
+        "fdi_net":       "BX.KLT.DINV.CD.WD",
+        "trade_pct_gdp": "NE.TRD.GNFS.ZS",
+        "unemployment":  "SL.UEM.TOTL.ZS",
+    }
+    for key, ind in indicators.items():
+        try:
+            url  = f"https://api.worldbank.org/v2/country/VN/indicator/{ind}?format=json&mrv=3&per_page=3"
+            data = fetch_json(url)
+            if isinstance(data, list) and len(data) > 1:
+                rows = [r for r in data[1] if r.get("value") is not None]
+                if rows:
+                    latest = rows[0]
+                    result[key] = {
+                        "value": latest["value"],
+                        "year":  latest["date"],
+                    }
+            time.sleep(0.3)
+        except Exception as e:
+            result[key] = {"error": str(e)[:60]}
+    result["source"] = "World Bank Open Data"
+    return result
+
+
+def get_sjc_gold_vn() -> dict:
+    """Giá vàng SJC VN — endpoint text thuần, dễ parse"""
+    result = {"buy": None, "sell": None, "unit": "nghìn đồng/chỉ", "source": "SJC"}
+    try:
+        req = urllib.request.Request(
+            "https://sjc.com.vn/giavang/textContent.php",
+            headers={"User-Agent": "Mozilla/5.0", "Accept": "text/plain,*/*"}
+        )
+        with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT) as resp:
+            raw = resp.read()
+        if raw[:2] == b"\x1f\x8b": raw = gzip.decompress(raw)
+        text = raw.decode("utf-8", errors="replace")
+        # Parse: dòng đầu là SJC 1L: mua | bán
+        lines = [l.strip() for l in text.split("\n") if l.strip()]
+        for line in lines[:5]:
+            parts = [p.strip() for p in line.split("|") if p.strip()]
+            if len(parts) >= 2:
+                try:
+                    result["buy"]  = float(parts[0].replace(",","").replace(".",""))
+                    result["sell"] = float(parts[1].replace(",","").replace(".",""))
+                    result["raw"]  = line
+                    return result
+                except: continue
+    except Exception as e:
+        result["error"] = str(e)[:80]
+    # Fallback: Jina
+    try:
+        jina_text = fetch_jina_content("https://sjc.com.vn/")
+        result["jina_text"] = jina_text[:300]
+    except: pass
+    return result
+
+
+def get_metal_sentinel_gold() -> dict:
+    """Metal Sentinel API — XAU/XAG real-time, 15.000 req/tháng free"""
+    result = {"xau_usd": None, "xag_usd": None, "source": ""}
+    try:
+        data = fetch_json("https://metal-sentinel.com/api/metal-quote?metals=XAU,XAG&currency=USD")
+        if isinstance(data, dict):
+            xau = data.get("XAU") or data.get("xau") or data.get("gold")
+            xag = data.get("XAG") or data.get("xag") or data.get("silver")
+            if xau:
+                result["xau_usd"] = round(float(xau), 2)
+                result["source"]  = "Metal Sentinel"
+            if xag:
+                result["xag_usd"] = round(float(xag), 2)
+    except Exception as e:
+        result["error"] = str(e)[:80]
+    return result
+
+
 def get_exchange_rates() -> dict:
     """Tỷ giá USD/VND và các cặp chính — ExchangeRate-API free"""
     result = {"usd_vnd": None, "eur_usd": None, "cny_usd": None,
@@ -580,6 +767,35 @@ RSS_SOURCES = [
     {"group":14, "name": "White House News",            "jina": "https://www.whitehouse.gov/news/"},
     {"group":14, "name": "White House Briefings",       "jina": "https://www.whitehouse.gov/briefings-statements/"},
     {"group":14, "name": "White House Executive Orders","jina": "https://www.whitehouse.gov/presidential-actions/executive-orders/"},
+    {"group":14, "name": "White House Remarks Trump",   "jina": "https://www.whitehouse.gov/remarks/"},
+    {"group":14, "name": "White House Fact Sheets",     "jina": "https://www.whitehouse.gov/fact-sheets/"},
+
+    # ── GDACS — Cảnh báo thiên tai EU JRC (RSS chuẩn, không cần key) ──
+    {"group": 1, "name": "GDACS Thiên tai TG",          "url":  "https://www.gdacs.org/xml/rss.xml"},
+
+    # ── Pháp luật VN — LuatVietnam (có tóm tắt nội dung) ────────────
+    {"group": 10, "name": "LuatVietnam Tài chính NH",   "jina": "https://luatvietnam.vn/tai-chinh.html"},
+    {"group": 10, "name": "LuatVietnam Bất động sản",   "jina": "https://luatvietnam.vn/bat-dong-san.html"},
+    {"group": 10, "name": "LuatVietnam Mới nhất",       "jina": "https://luatvietnam.vn/van-ban-moi-nhat.html"},
+    {"group": 10, "name": "vbpl.vn Trung ương",         "jina": "https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx"},
+
+    # ── Lãnh đạo VN — TTXVN / Báo Tin Tức (RSS) ─────────────────────
+    {"group": 13, "name": "TTXVN Thời sự",              "url":  "https://baotintuc.vn/rss/thoi-su.rss"},
+    {"group": 13, "name": "TTXVN Chính trị",            "url":  "https://baotintuc.vn/rss/chinh-tri.rss"},
+    {"group": 13, "name": "Nhân dân Chính trị",         "url":  "https://nhandan.vn/rss/chinh-tri.rss"},
+
+    # ── Thiên tai VN — Khí tượng thủy văn ───────────────────────────
+    {"group": 1,  "name": "KTTV VN Tin tức",            "jina": "https://nchmf.gov.vn/Kttv/vi-VN/1/tin-tuc.html"},
+    {"group": 1,  "name": "PCTT VN Thông báo",          "jina": "https://phongchongthientai.mard.gov.vn/Pages/tin-tuc.aspx"},
+
+    # ── GSO Kinh tế VN ───────────────────────────────────────────────
+    {"group": 3,  "name": "GSO Thông cáo thống kê",     "jina": "https://www.gso.gov.vn/tin-tuc-thong-ke/"},
+
+    # ── Bộ Công Thương — Giá xăng dầu VN ────────────────────────────
+    {"group": 9,  "name": "Bộ Công Thương Giá xăng",   "jina": "https://www.moit.gov.vn/tin-tuc/dieu-hanh-gia-xang-dau"},
+
+    # ── Tạp chí Ngân hàng ────────────────────────────────────────────
+    {"group": 11, "name": "Tạp chí Ngân hàng",          "jina": "https://tapchinganhang.gov.vn/"},
 ]
 
 
@@ -853,6 +1069,104 @@ def build_markdown(api_data: dict, rss_data: dict,
             lines.append(f"> ⚠️ {label}: {d['error']}")
     lines += ["", "---", ""]
 
+    # ── WHO Disease Outbreaks ──────────────────────────────────────────
+    who_data = api_data.get("who_outbreaks", [])
+    who_ok   = [x for x in who_data if "title" in x]
+    lines += ["## 🦠 WHO Disease Outbreak News (API Chính thức)", ""]
+    if who_ok:
+        lines.append(f"*{len(who_ok)} cảnh báo dịch bệnh từ WHO*")
+        lines.append("")
+        for item in who_ok[:6]:
+            country = f" — {item['country']}" if item.get("country") else ""
+            link    = f"[{item['title']}]({item['url']})" if item.get("url") else item["title"]
+            lines.append(f"**{link}**{country}")
+            if item.get("date"):
+                lines.append(f"*{item['date']}*")
+            if item.get("summary"):
+                lines.append(f"> {str(item['summary'])[:250]}")
+            lines.append("")
+    else:
+        lines.append("> ⚠️ WHO API: Không lấy được dữ liệu")
+    lines += ["---", ""]
+
+    # ── USGS Earthquakes ────────────────────────────────────────────────
+    eq_data = api_data.get("earthquakes", [])
+    eq_ok   = [x for x in eq_data if "mag" in x]
+    lines += ["## 🌍 Động đất Toàn cầu (USGS, M≥5.0, 24h qua)", ""]
+    if eq_ok:
+        lines.append(f"*{len(eq_ok)} trận động đất trong 24h qua*")
+        lines.append("")
+        lines.append("| Độ lớn | Địa điểm | Độ sâu | Cảnh báo |")
+        lines.append("|---|---|---|---|")
+        for eq in eq_ok:
+            mag   = f"M{eq.get('mag','?')}"
+            place = eq.get("place","?")[:50]
+            depth = f"{eq.get('depth_km','?')} km"
+            alert = eq.get("alert","—") or "—"
+            lines.append(f"| **{mag}** | {place} | {depth} | {alert} |")
+        lines.append("")
+    else:
+        lines.append("> Không có động đất M≥5.0 trong 24h qua")
+    lines += ["---", ""]
+
+    # ── GDELT Geopolitics ───────────────────────────────────────────────
+    gd_data = api_data.get("gdelt", [])
+    gd_ok   = [x for x in gd_data if "title" in x]
+    lines += ["## 🌐 GDELT Địa chính trị (Cập nhật 15 phút)", ""]
+    if gd_ok:
+        lines.append(f"*{len(gd_ok)} bài từ GDELT — VN, SEA, Mỹ-Trung*")
+        lines.append("")
+        cur_tag = None
+        for item in gd_ok:
+            if item.get("tag") != cur_tag:
+                cur_tag = item.get("tag")
+                tag_names = {"VN": "🇻🇳 Việt Nam", "SEA": "🌏 Đông Nam Á", "US-CN": "🇺🇸🇨🇳 Mỹ-Trung"}
+                lines.append(f"**{tag_names.get(cur_tag, cur_tag)}**")
+            title  = item.get("title","")
+            src    = item.get("source","")
+            url    = item.get("url","")
+            tone   = item.get("tone")
+            tone_s = f" (tone: {tone:.1f})" if tone is not None else ""
+            if url:
+                lines.append(f"- [{title}]({url}) *{src}*{tone_s}")
+            else:
+                lines.append(f"- {title} *{src}*{tone_s}")
+        lines.append("")
+    else:
+        lines.append("> ⚠️ GDELT API: Không có dữ liệu")
+    lines += ["---", ""]
+
+    # ── World Bank VN ───────────────────────────────────────────────────
+    wb = api_data.get("worldbank_vn", {})
+    lines += ["## 🏦 World Bank — Kinh tế Vĩ mô Việt Nam", ""]
+    wb_display = {
+        "GDP_USD":       ("GDP (USD)", "tỷ USD", 1e9),
+        "GDP_growth":    ("Tăng trưởng GDP", "%", 1),
+        "inflation":     ("Lạm phát CPI", "%", 1),
+        "fdi_net":       ("FDI ròng", "tỷ USD", 1e9),
+        "trade_pct_gdp": ("Thương mại/GDP", "%", 1),
+        "unemployment":  ("Thất nghiệp", "%", 1),
+    }
+    lines.append("| Chỉ số | Giá trị | Năm | Nguồn |")
+    lines.append("|---|---|---|---|")
+    for key, (label, unit, divisor) in wb_display.items():
+        d = wb.get(key, {})
+        if isinstance(d, dict) and d.get("value") is not None:
+            val = d["value"] / divisor
+            lines.append(f"| {label} | **{val:.1f} {unit}** | {d.get('year','N/A')} | World Bank |")
+        else:
+            lines.append(f"| {label} | N/A | — | World Bank |")
+    lines += ["", "---", ""]
+
+    # ── SJC Vàng VN ─────────────────────────────────────────────────────
+    sjc = api_data.get("sjc", {})
+    if sjc.get("buy") or sjc.get("sell"):
+        lines += ["## 🥇 Giá Vàng SJC Việt Nam", ""]
+        lines.append("| Loại | Mua vào | Bán ra | Đơn vị |")
+        lines.append("|---|---|---|---|")
+        lines.append(f"| SJC 1 lượng | {sjc.get('buy','N/A'):,} | {sjc.get('sell','N/A'):,} | nghìn đồng |")
+        lines += ["", "---", ""]
+
     # ── TIN TỨC RSS THEO NHÓM ───────────────────────────────────────
     GROUP_NAMES = {
         1:  ("🏥", "Dịch bệnh & Thiên tai"),
@@ -1002,6 +1316,29 @@ def main():
 
     print("  [API] VNIndex + HNX-Index...")
     api_data["vnindex"] = get_vnindex()
+
+    print("  [API] WHO Disease Outbreaks...")
+    api_data["who_outbreaks"] = get_who_outbreaks()
+    n_who = len([x for x in api_data["who_outbreaks"] if "title" in x])
+    print(f"        WHO: {n_who} outbreaks")
+
+    print("  [API] USGS Earthquakes (M>=5.0, 24h)...")
+    api_data["earthquakes"] = get_usgs_earthquakes()
+    n_eq = len([x for x in api_data["earthquakes"] if "mag" in x])
+    print(f"        USGS: {n_eq} earthquakes")
+
+    print("  [API] GDELT Geopolitics...")
+    api_data["gdelt"] = get_gdelt_geopolitics()
+    n_gd = len([x for x in api_data["gdelt"] if "title" in x])
+    print(f"        GDELT: {n_gd} articles")
+
+    print("  [API] World Bank Vietnam...")
+    api_data["worldbank_vn"] = get_world_bank_vn()
+    wb_keys = [k for k in api_data["worldbank_vn"] if k != "source" and "error" not in str(api_data["worldbank_vn"].get(k))]
+    print(f"        WB: {len(wb_keys)} indicators")
+
+    print("  [API] SJC Gold VN...")
+    api_data["sjc"] = get_sjc_gold_vn()
     vi = api_data["vnindex"]
     if vi.get("vnindex"):
         chg = vi.get("vnindex_change", 0) or 0
