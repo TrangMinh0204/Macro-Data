@@ -8,7 +8,7 @@ Chiến lược mới hoàn toàn:
   - Jina chỉ dùng cho bài báo cụ thể (có URL thẳng đến bài)
 """
 
-import time, datetime, gzip, json, zlib
+import time, datetime, gzip, json, zlib, ssl, random
 import urllib.request, urllib.error
 import re, xml.etree.ElementTree as ET
 from pathlib import Path
@@ -197,32 +197,41 @@ def get_gold_prices() -> dict:
     except Exception as e3:
         result["_cb_err"] = str(e3)[:60]
 
-    result["error"] = "Không lấy được giá vàng — thử lại sau"
+    debug = " | ".join(f"{k}={result[k]}" for k in ("_er_err","_frank_err","_cb_err") if k in result)
+    result["error"] = f"Không lấy được giá vàng từ cả 4 nguồn. Debug: {debug or 'không có chi tiết (có thể Metal Sentinel fail âm thầm)'}"
     return result
 
-def get_who_outbreaks() -> list:
-    """WHO Disease Outbreak News — REST API chính thức, không cần key"""
+def get_who_outbreaks(last_run_utc: datetime.datetime = None) -> list:
+    """WHO Disease Outbreak News — REST API chính thức, không cần key.
+    Lọc theo last_run_utc (giống RSS) + sort mới nhất trước, tránh trả về
+    tin từ nhiều năm trước lẫn lộn với tin mới."""
     try:
         data = fetch_json("https://www.who.int/api/news/diseaseoutbreaknews")
         items = data if isinstance(data, list) else data.get("value", data.get("items", []))
         results = []
-        for item in items[:8]:
+        for item in items:
             title   = item.get("title","") or item.get("Title","")
             date    = item.get("publicationDate","") or item.get("PublicationDate","")
             summary = item.get("summary","") or item.get("Summary","") or item.get("excerpt","")
             country = item.get("countryTitle","") or item.get("country","")
             url     = item.get("url","") or item.get("Url","")
-            if not title: continue
+            if not title or not date: continue
+            dt = parse_pubdate(str(date))
+            if last_run_utc is not None and (dt is None or dt <= last_run_utc):
+                continue   # bỏ tin cũ hơn last_run — cùng logic với RSS
             if isinstance(summary, str):
                 summary = summary[:300]
             results.append({
                 "title":   title,
                 "date":    str(date)[:20],
+                "_sort":   dt or datetime.datetime.min,
                 "summary": summary,
                 "country": country,
                 "url":     url,
             })
-        return results
+        results.sort(key=lambda x: x["_sort"], reverse=True)
+        for r in results: r.pop("_sort", None)
+        return results[:8]
     except Exception as e:
         return [{"error": str(e)[:100]}]
 
@@ -422,6 +431,17 @@ def get_oil_price() -> dict:
     return result
 
 
+VNINDEX_SANITY_RANGE = (300.0, 5000.0)  # VNIndex thực tế chưa từng nằm ngoài khoảng này
+
+
+def _vnindex_plausible(v) -> bool:
+    """Sanity-check: từ chối số vô lý (vd. bắt nhầm '17' từ regex) thay vì báo cáo như số thật."""
+    try:
+        return VNINDEX_SANITY_RANGE[0] <= float(v) <= VNINDEX_SANITY_RANGE[1]
+    except (TypeError, ValueError):
+        return False
+
+
 def get_vnindex() -> dict:
     """VNIndex + HNX-Index từ SSI iBoard API (public, không cần key)"""
     result = {
@@ -447,7 +467,7 @@ def get_vnindex() -> dict:
         data = json.loads(raw.decode("utf-8", errors="replace"))
         d = data.get("data", data)
         if isinstance(d, list): d = d[0] if d else {}
-        if d.get("indexValue"):
+        if d.get("indexValue") and _vnindex_plausible(d.get("indexValue")):
             result["vnindex"]       = float(d.get("indexValue", 0))
             result["vnindex_change"]= float(d.get("indexChange", 0))
             result["vnindex_pct"]   = float(d.get("percentChange", 0))
@@ -473,6 +493,8 @@ def get_vnindex() -> dict:
                     result["hnx_change"] = float(d2.get("indexChange", 0))
             except: pass
             return result
+        elif d.get("indexValue"):
+            result["_ssi_err"] = f"Giá trị vô lý bị loại: {d.get('indexValue')}"
     except Exception as e:
         result["_ssi_err"] = str(e)[:80]
 
@@ -487,16 +509,20 @@ def get_vnindex() -> dict:
             raw3 = resp3.read()
         if raw3[:2] == b"\x1f\x8b": raw3 = gzip.decompress(raw3)
         d3 = json.loads(raw3.decode("utf-8", errors="replace"))
-        if d3.get("indexValue"):
+        if d3.get("indexValue") and _vnindex_plausible(d3.get("indexValue")):
             result["vnindex"]        = float(d3.get("indexValue", 0))
             result["vnindex_change"] = float(d3.get("change", 0))
             result["vnindex_pct"]    = float(d3.get("percentChange", 0))
             result["source"]         = "TCBS API"
             return result
+        elif d3.get("indexValue"):
+            result["_tcbs_err"] = f"Giá trị vô lý bị loại: {d3.get('indexValue')}"
     except Exception as e2:
         result["_tcbs_err"] = str(e2)[:80]
 
-    # Nguồn 3: Jina đọc CafeF bảng giá (fallback)
+    # Nguồn 3: Jina đọc CafeF bảng giá (fallback) — regex có thể bắt nhầm số rác
+    # nên BẮT BUỘC qua sanity-check; nguồn này không có change/pct đáng tin cậy
+    # nên cố tình để None thay vì mặc định 0 (tránh hiển thị giả "+0.00%").
     try:
         jina_url = JINA_BASE + "https://cafef.vn/thi-truong-chung-khoan.chn"
         req4 = urllib.request.Request(jina_url, headers={"User-Agent": "Mozilla/5.0"})
@@ -508,13 +534,20 @@ def get_vnindex() -> dict:
         m = __import__("re").search(
             r"VN[\-\s]?Index[^\d]*(\d[\d,.]+)", text4, __import__("re").IGNORECASE)
         if m:
-            result["vnindex"] = float(m.group(1).replace(",",""))
-            result["source"]  = "CafeF Jina (fallback)"
-            return result
+            candidate = float(m.group(1).replace(",",""))
+            if _vnindex_plausible(candidate):
+                result["vnindex"] = candidate
+                result["source"]  = "CafeF Jina (fallback, chưa xác thực change/pct)"
+                return result
+            else:
+                result["_jina_err"] = f"Regex bắt nhầm giá trị vô lý: {candidate}"
+        else:
+            result["_jina_err"] = "Không tìm thấy pattern VNIndex trong trang (có thể do JS-render)"
     except Exception as e3:
         result["_jina_err"] = str(e3)[:80]
 
-    result["error"] = "Không lấy được VNIndex — thị trường đóng cửa hoặc API lỗi"
+    debug = " | ".join(f"{k}={result[k]}" for k in ("_ssi_err","_tcbs_err","_jina_err") if k in result)
+    result["error"] = f"Không lấy được VNIndex hợp lệ từ cả 3 nguồn — thị trường đóng cửa hoặc API lỗi. Debug: {debug}"
     return result
 
 
@@ -712,8 +745,10 @@ RSS_SOURCES = [
     {"group": 3, "name": "The Guardian Business",      "url": "https://www.theguardian.com/business/rss"},
 
     # AP News — thêm vào làm nguồn tin cậy
-    {"group": 2, "name": "AP News World",              "url": "https://feeds.apnews.com/rss/apf-intlnews"},
-    {"group": 3, "name": "AP News Business",           "url": "https://feeds.apnews.com/rss/apf-business"},
+    # TODO: feeds.apnews.com không còn resolve DNS (AP đã khai tử subdomain feed cũ).
+    # Cần tìm domain feed RSS mới của AP hoặc bỏ hẳn nguồn này.
+    # {"group": 2, "name": "AP News World",            "url": "https://feeds.apnews.com/rss/apf-intlnews"},
+    # {"group": 3, "name": "AP News Business",         "url": "https://feeds.apnews.com/rss/apf-business"},
 
     # ── Việt Nam tin tức ──────────────────────────────────────────
     # VnExpress — thường bị 503 do chặn bot, dùng VnEconomy + Tuổi Trẻ thay thế
@@ -737,12 +772,15 @@ RSS_SOURCES = [
 
     # ── Người Quan Sát (nguoiquansat.vn) — tài chính đầu tư VN ──
     # Jina vì OneCMS không có public RSS — trang load được tốt
-    {"group": 3,  "name": "NQS Chứng khoán",           "jina": "https://nguoiquansat.vn/chung-khoan"},
-    {"group": 3,  "name": "NQS Doanh nghiệp",          "jina": "https://nguoiquansat.vn/doanh-nghiep"},
-    {"group": 3,  "name": "NQS Vĩ mô",                 "jina": "https://nguoiquansat.vn/vi-mo"},
-    {"group": 11, "name": "NQS Tài chính Ngân hàng",   "jina": "https://nguoiquansat.vn/tai-chinh-ngan-hang"},
-    {"group": 12, "name": "NQS Vàng - Tỷ giá",         "jina": "https://nguoiquansat.vn/tai-chinh-ngan-hang/vang-ty-gia"},
-    {"group": 2,  "name": "NQS Thế giới",               "jina": "https://nguoiquansat.vn/the-gioi"},
+    # TODO: nguoiquansat.vn bị Cloudflare bot-challenge chặn ở CẢ 6 endpoint —
+    # Jina reader free tier không vượt qua được "Just a moment..." của Cloudflare.
+    # Cần nguồn thay thế tương đương hoặc dịch vụ crawl có anti-detection.
+    # {"group": 3,  "name": "NQS Chứng khoán",           "jina": "https://nguoiquansat.vn/chung-khoan"},
+    # {"group": 3,  "name": "NQS Doanh nghiệp",          "jina": "https://nguoiquansat.vn/doanh-nghiep"},
+    # {"group": 3,  "name": "NQS Vĩ mô",                 "jina": "https://nguoiquansat.vn/vi-mo"},
+    # {"group": 11, "name": "NQS Tài chính Ngân hàng",   "jina": "https://nguoiquansat.vn/tai-chinh-ngan-hang"},
+    # {"group": 12, "name": "NQS Vàng - Tỷ giá",         "jina": "https://nguoiquansat.vn/tai-chinh-ngan-hang/vang-ty-gia"},
+    # {"group": 2,  "name": "NQS Thế giới",               "jina": "https://nguoiquansat.vn/the-gioi"},
 
     # ── Chính phủ VN — Chỉ đạo điều hành (nhóm 10) ───────────────
     {"group":10, "name": "ChinhPhu Chỉ đạo điều hành", "jina": "https://chinhphu.vn/chi-dao-quyet-dinh-cua-chinh-phu-thu-tuong-chinh-phu"},
@@ -759,7 +797,10 @@ RSS_SOURCES = [
     {"group":13, "name": "BaoChinhPhu Họp báo CP",      "jina": "https://baochinhphu.vn/hop-bao-chinh-phu.htm"},
 
     # ── Dịch bệnh ─────────────────────────────────────────────────
-    {"group": 1, "name": "ProMED Mail",                 "url": "https://promedmail.org/feed/"},
+    # TODO: ProMED đã đổi nền tảng (Next.js/Vercel), /feed/ không còn tồn tại và
+    # không tìm thấy RSS thay thế công khai trên trang mới — cần quyết định hướng
+    # (xem "Giai đoạn 3" trong kế hoạch sửa chữa) trước khi bật lại nguồn này.
+    # {"group": 1, "name": "ProMED Mail",               "url": "https://promedmail.org/feed/"},
     {"group": 1, "name": "CDC Health Updates",          "url": "https://tools.cdc.gov/api/v2/resources/media/316422.rss"},
 
     # ── Trump / Địa chính trị Mỹ ─────────────────────────────────
@@ -785,7 +826,7 @@ RSS_SOURCES = [
     {"group": 13, "name": "Nhân dân Chính trị",         "url":  "https://nhandan.vn/rss/chinh-tri.rss"},
 
     # ── Thiên tai VN — Khí tượng thủy văn ───────────────────────────
-    {"group": 1,  "name": "KTTV VN Tin tức",            "jina": "https://nchmf.gov.vn/Kttv/vi-VN/1/tin-tuc.html"},
+    {"group": 1,  "name": "KTTV VN Tin tức",            "url":  "https://nchmf.gov.vn/kttvsite/vi-VN/1/homerss.html"},
     {"group": 1,  "name": "PCTT VN Thông báo",          "jina": "https://phongchongthientai.mard.gov.vn/Pages/tin-tuc.aspx"},
 
     # ── GSO Kinh tế VN ───────────────────────────────────────────────
@@ -808,13 +849,26 @@ def decompress(data: bytes) -> bytes:
     return data
 
 
-def fetch_rss(url: str) -> list:
+def _fetch_rss_once(url: str) -> list:
     req = urllib.request.Request(url, headers=RSS_HEADERS)
     try:
         with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT) as resp:
             raw = decompress(resp.read())
     except Exception as e:
-        return [{"error": f"{type(e).__name__}: {str(e)[:80]}"}]
+        err_str = str(e)
+        # Server dùng TLS renegotiation cũ (vd. baotintuc.vn/TTXVN) mà OpenSSL 3.x
+        # mặc định từ chối — thử lại 1 lần với context cho phép legacy renegotiation
+        # thay vì bỏ cuộc ngay.
+        if "UNSAFE_LEGACY_RENEGOTIATION" in err_str or "legacy renegotiation" in err_str.lower():
+            try:
+                legacy_ctx = ssl.create_default_context()
+                legacy_ctx.options |= 0x4  # ssl.OP_LEGACY_SERVER_CONNECT
+                with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT, context=legacy_ctx) as resp:
+                    raw = decompress(resp.read())
+            except Exception as e2:
+                return [{"error": f"{type(e2).__name__}: {str(e2)[:80]} (đã thử legacy SSL context)"}]
+        else:
+            return [{"error": f"{type(e).__name__}: {err_str[:80]}"}]
 
     for enc in ("utf-8", "utf-8-sig", "latin-1"):
         try:
@@ -871,6 +925,18 @@ def fetch_rss(url: str) -> list:
     return items or [{"error": "Feed rỗng"}]
 
 
+def fetch_rss(url: str) -> list:
+    """Wrapper quanh _fetch_rss_once(): với Google News RSS (news.google.com),
+    'Feed rỗng' có thể do throttle tạm thời từ IP dùng chung của GitHub Actions
+    chứ không hẳn là thực sự không có tin — thử lại 1 lần sau khi chờ jitter."""
+    items = _fetch_rss_once(url)
+    if ("news.google.com" in url and items and len(items) == 1
+            and items[0].get("error") == "Feed rỗng"):
+        time.sleep(random.uniform(3, 7))
+        items = _fetch_rss_once(url)
+    return items
+
+
 def is_important(title: str, summary: str) -> bool:
     return any(kw in (title+" "+summary).lower() for kw in IMPORTANT_KEYWORDS)
 
@@ -890,17 +956,42 @@ def fetch_full_article(url: str) -> str:
 
 
 def fetch_jina_content(url: str) -> str:
-    """Fetch Jina và trả về text sạch."""
+    """Fetch Jina và trả về text sạch — ưu tiên các dòng markdown link dài
+    (tiêu đề bài viết thật) thay vì giữ nguyên đoạn văn/breadcrumb chung chung."""
     req = urllib.request.Request(JINA_BASE + url, headers=JINA_HEADERS)
     try:
         with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT) as resp:
             raw = decompress(resp.read())
             text = raw.decode("utf-8", errors="replace")
-        # Lọc noise
-        lines, out = text.split("\n"), []
+
         noise = {"cookie","javascript","subscribe","sign in","log in",
                  "advertisement","đăng nhập","đăng ký","skip to content",
-                 "toggle navigation","menu","weather","thời tiết"}
+                 "toggle navigation","menu","weather","thời tiết",
+                 "trang chủ","liên hệ","sơ đồ","giới thiệu cổng",
+                 "thư điện tử","văn phòng điện tử","lịch công tác"}
+
+        lines = text.split("\n")
+
+        # Pass 1: trích các dòng markdown link [tiêu đề dài](url) — đây gần như
+        # luôn là headline bài viết thật trên trang tin tức/chỉ đạo điều hành,
+        # khác với link menu ngắn kiểu [Trang chủ](...) hay [Liên hệ](...).
+        link_pattern = re.compile(r'\[([^\]]{15,200})\]\((https?://[^\)]+)\)')
+        headline_candidates = []
+        for line in lines:
+            for m in link_pattern.finditer(line):
+                title, href = m.group(1).strip(), m.group(2).strip()
+                if any(n in title.lower() for n in noise): continue
+                if re.match(r'^(image|hình ảnh|icon)\b', title.lower()): continue
+                if not re.search(r'[.!?]| ', title): continue  # loại nhãn 1 từ
+                headline_candidates.append((title, href))
+
+        if len(headline_candidates) >= 3:
+            out = [f"- [{t}]({h})" for t, h in headline_candidates[:20]]
+            return ("\n".join(out))[:5000]
+
+        # Pass 2 (fallback): trang không theo cấu trúc link-danh-sách rõ ràng
+        # (vd. trang thông báo đơn lẻ) — dùng lọc đoạn văn như cũ.
+        out = []
         for line in lines:
             s = line.strip()
             if len(s) < 20: continue
@@ -1037,15 +1128,19 @@ def build_markdown(api_data: dict, rss_data: dict,
     # ── VNIndex block ──────────────────────────────────────────────────
     vi = api_data.get("vnindex", {})
     if vi.get("vnindex"):
-        chg   = float(vi.get("vnindex_change") or 0)
-        pct   = float(vi.get("vnindex_pct") or 0)
+        # Chỉ tính chg/pct khi THỰC SỰ có dữ liệu — None nghĩa là nguồn (vd. Jina
+        # fallback) không cung cấp, phải hiện "N/A", không được ngầm hiểu là "không đổi"
+        has_chg = vi.get("vnindex_change") is not None
+        chg   = float(vi.get("vnindex_change")) if has_chg else 0.0
+        pct   = float(vi.get("vnindex_pct") or 0) if has_chg else 0.0
         sign  = "+" if chg >= 0 else ""
-        arrow = "🟢" if chg >= 0 else "🔴"
+        arrow = "🟢" if chg >= 0 else ("🔴" if chg < 0 else "⚪")
+        chg_display = f"{arrow} {sign}{fmt_num(chg,2,'')} ({sign}{fmt_num(pct,2,'%')})" if has_chg else "⚪ N/A (nguồn không cung cấp % thay đổi)"
         lines += [
             "### 📈 VNIndex & TTCK Việt Nam",
             "| Chỉ số | Điểm | Thay đổi | Nguồn |",
             "|---|---|---|---|",
-            f"| **VNIndex** | **{fmt_num(vi['vnindex'],2,'')}** | {arrow} {sign}{fmt_num(chg,2,'')} ({sign}{fmt_num(pct,2,'%')}) | {vi.get('source','N/A')} |",
+            f"| **VNIndex** | **{fmt_num(vi['vnindex'],2,'')}** | {chg_display} | {vi.get('source','N/A')} |",
         ]
         if vi.get("hnx"):
             hchg  = float(vi.get("hnx_change") or 0)
@@ -1070,11 +1165,12 @@ def build_markdown(api_data: dict, rss_data: dict,
     lines += ["", "---", ""]
 
     # ── WHO Disease Outbreaks ──────────────────────────────────────────
-    who_data = api_data.get("who_outbreaks", [])
-    who_ok   = [x for x in who_data if "title" in x]
+    who_data  = api_data.get("who_outbreaks", [])
+    who_error = who_data[0].get("error") if who_data and "error" in who_data[0] else None
+    who_ok    = [x for x in who_data if "title" in x]
     lines += ["## 🦠 WHO Disease Outbreak News (API Chính thức)", ""]
     if who_ok:
-        lines.append(f"*{len(who_ok)} cảnh báo dịch bệnh từ WHO*")
+        lines.append(f"*{len(who_ok)} cảnh báo dịch bệnh MỚI từ WHO*")
         lines.append("")
         for item in who_ok[:6]:
             country = f" — {item['country']}" if item.get("country") else ""
@@ -1085,8 +1181,10 @@ def build_markdown(api_data: dict, rss_data: dict,
             if item.get("summary"):
                 lines.append(f"> {str(item['summary'])[:250]}")
             lines.append("")
+    elif who_error:
+        lines.append(f"> ⚠️ WHO API: Không lấy được dữ liệu ({who_error})")
     else:
-        lines.append("> ⚠️ WHO API: Không lấy được dữ liệu")
+        lines.append("*Không có cảnh báo dịch bệnh MỚI từ WHO trong window này*")
     lines += ["---", ""]
 
     # ── USGS Earthquakes ────────────────────────────────────────────────
@@ -1211,7 +1309,7 @@ def build_markdown(api_data: dict, rss_data: dict,
             # ── RSS items ─────────────────────────────────────────
             else:
                 items = src.get("items", [])
-                if items and "error" not in items[0]:
+                if src["ok"]:
                     n          = len(items)
                     ni         = src.get("important_count", 0)
                     n_filtered = src.get("filtered_count", 0)
@@ -1287,6 +1385,10 @@ def main():
     print(f"Strategy: API JSON (số liệu thực) + RSS (tin tức)")
     print(f"{'='*60}\n")
 
+    # Load timestamp lần chạy trước SỚM — cần cho cả WHO lẫn RSS filter
+    last_run_utc = load_last_run()
+    last_run_ict = last_run_utc + datetime.timedelta(hours=TIMEZONE_OFFSET)
+
     # Thu thập API
     print("[API] Lấy số liệu thị trường...")
     api_data = {}
@@ -1318,7 +1420,7 @@ def main():
     api_data["vnindex"] = get_vnindex()
 
     print("  [API] WHO Disease Outbreaks...")
-    api_data["who_outbreaks"] = get_who_outbreaks()
+    api_data["who_outbreaks"] = get_who_outbreaks(last_run_utc)
     n_who = len([x for x in api_data["who_outbreaks"] if "title" in x])
     print(f"        WHO: {n_who} outbreaks")
 
@@ -1348,9 +1450,6 @@ def main():
     else:
         print(f"        VNIndex = N/A ({vi.get('error','')})")
 
-    # Load timestamp lần chạy trước
-    last_run_utc = load_last_run()
-    last_run_ict = last_run_utc + datetime.timedelta(hours=TIMEZONE_OFFSET)
     print(f"\n[Filter] Chỉ lấy tin MỚI sau: {last_run_ict.strftime('%Y-%m-%d %H:%M ICT')}")
 
     # Thu thập RSS — chỉ lấy tin trong window [last_run → now]
