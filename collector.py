@@ -20,6 +20,26 @@ MAX_CHARS_ARTICLE = 4000
 JINA_BASE         = "https://r.jina.ai/"
 
 LAST_RUN_FILE     = Path("output/last_run.txt")   # Lưu timestamp lần chạy trước
+MARKET_CACHE_FILE = Path("output/market_cache.json")  # Giá tốt gần nhất (VNIndex, vàng)
+
+
+def load_market_cache() -> dict:
+    """Đọc giá tốt gần nhất từ lần chạy trước (persist vì workflow commit output/)."""
+    try:
+        if MARKET_CACHE_FILE.exists():
+            return json.loads(MARKET_CACHE_FILE.read_text(encoding="utf-8"))
+    except Exception:
+        pass
+    return {}
+
+
+def save_market_cache(cache: dict):
+    try:
+        MARKET_CACHE_FILE.parent.mkdir(parents=True, exist_ok=True)
+        MARKET_CACHE_FILE.write_text(
+            json.dumps(cache, ensure_ascii=False, indent=1), encoding="utf-8")
+    except Exception:
+        pass
 
 
 # ── Hàm xử lý thời gian ──────────────────────────────────────────────────────
@@ -139,66 +159,60 @@ def fetch_json(url: str, headers: dict = None) -> dict | list | None:
 
 
 def get_gold_prices() -> dict:
-    """Giá vàng — open.er-api XAU/USD (no key) + CafeF fallback"""
+    """Giá vàng — gold-api.com (free, KHÔNG cần key) làm nguồn chính;
+    Metal Sentinel làm fallback (cần RapidAPI key, hiện chưa cấu hình
+    nên chỉ có tác dụng nếu sau này bạn thêm key vào)."""
     result = {"xau_usd": None, "xag_usd": None,
               "sjc_vnd": None, "source": "", "error": ""}
 
-    # Nguồn 0: Metal Sentinel (15,000 req/tháng free) — ưu tiên cao nhất
+    # Nguồn 1: gold-api.com — free, KHÔNG cần API key, không giới hạn rate
+    # cho giá real-time. Đã xác minh còn hoạt động (2026). Field name "price"
+    # dựa trên giao diện trang chủ ("$X Per Oz"); nếu schema đổi, debug dưới
+    # sẽ in ra toàn bộ response để chỉnh lại nhanh.
+    try:
+        d1 = fetch_json("https://api.gold-api.com/price/XAU")
+        price = None
+        if isinstance(d1, dict):
+            price = d1.get("price") or d1.get("rate") or d1.get("value")
+        if price:
+            result["xau_usd"] = round(float(price), 2)
+            result["source"]  = "gold-api.com"
+            try:
+                d2 = fetch_json("https://api.gold-api.com/price/XAG")
+                if isinstance(d2, dict):
+                    p2 = d2.get("price") or d2.get("rate") or d2.get("value")
+                    if p2: result["xag_usd"] = round(float(p2), 2)
+            except: pass
+            sjc = get_sjc_gold_vn()
+            result["sjc_vnd"] = sjc.get("sell")
+            result["sjc_buy"] = sjc.get("buy")
+            return result
+        else:
+            result["_goldapi_err"] = f"Response không đúng schema kỳ vọng: {str(d1)[:100]}"
+    except Exception as e0:
+        result["_goldapi_err"] = str(e0)[:80]
+
+    # Nguồn 2: Metal Sentinel — cần RapidAPI key (X-RapidAPI-Key header),
+    # hiện code KHÔNG truyền key nên nguồn này sẽ luôn fail cho tới khi
+    # được cấu hình. Vẫn giữ làm fallback và sửa lỗi cũ (get_gold_prices()
+    # từng vứt bỏ ms.get("error") mà không đọc — giờ đọc và surface ra).
     try:
         ms = get_metal_sentinel_gold()
         if ms.get("xau_usd"):
             result["xau_usd"] = ms["xau_usd"]
             result["xag_usd"] = ms.get("xag_usd")
             result["source"]  = "Metal Sentinel"
-            # Vẫn lấy SJC VN
             sjc = get_sjc_gold_vn()
             result["sjc_vnd"] = sjc.get("sell")
             result["sjc_buy"] = sjc.get("buy")
             return result
-    except: pass
+        elif ms.get("error"):
+            result["_ms_err"] = ms["error"]
+    except Exception as e1:
+        result["_ms_err"] = str(e1)[:80]
 
-    # Nguồn 1: open.er-api XAU base (truly no key required)
-    try:
-        data = fetch_json("https://open.er-api.com/v6/latest/XAU")
-        if isinstance(data, dict) and data.get("result") == "success":
-            rates = data.get("rates", {})
-            if rates.get("USD"):
-                result["xau_usd"] = round(float(rates["USD"]), 2)
-                result["source"]  = "open.er-api (XAU)"
-                # Silver từ XAG base
-                try:
-                    d2 = fetch_json("https://open.er-api.com/v6/latest/XAG")
-                    if isinstance(d2, dict) and d2.get("result") == "success":
-                        result["xag_usd"] = round(float(d2["rates"]["USD"]), 2)
-                except: pass
-                return result
-    except Exception as e:
-        result["_er_err"] = str(e)[:60]
-
-    # Nguồn 2: frankfurter.app — XAU/USD qua EUR pivot
-    try:
-        d3 = fetch_json("https://api.frankfurter.app/latest?from=XAU&to=USD,EUR")
-        if isinstance(d3, dict) and "rates" in d3 and d3["rates"].get("USD"):
-            result["xau_usd"] = round(float(d3["rates"]["USD"]), 2)
-            result["source"]  = "frankfurter.app (XAU)"
-            return result
-    except Exception as e2:
-        result["_frank_err"] = str(e2)[:60]
-
-    # Nguồn 3: coinbase public (no key)
-    try:
-        d4 = fetch_json("https://api.coinbase.com/v2/exchange-rates?currency=XAU")
-        if isinstance(d4, dict):
-            usd = d4.get("data", {}).get("rates", {}).get("USD")
-            if usd:
-                result["xau_usd"] = round(float(usd), 2)
-                result["source"]  = "coinbase (XAU)"
-                return result
-    except Exception as e3:
-        result["_cb_err"] = str(e3)[:60]
-
-    debug = " | ".join(f"{k}={result[k]}" for k in ("_er_err","_frank_err","_cb_err") if k in result)
-    result["error"] = f"Không lấy được giá vàng từ cả 4 nguồn. Debug: {debug or 'không có chi tiết (có thể Metal Sentinel fail âm thầm)'}"
+    debug = " | ".join(f"{k}={result[k]}" for k in ("_goldapi_err", "_ms_err") if k in result)
+    result["error"] = f"Không lấy được giá vàng từ cả 2 nguồn. Debug: {debug or 'không có chi tiết'}"
     return result
 
 def get_who_outbreaks(last_run_utc: datetime.datetime = None) -> list:
@@ -283,8 +297,16 @@ def get_gdelt_geopolitics() -> list:
                 "&mode=artlist&maxrecords=5&format=json"
                 "&timespan=24h&sort=hybridrel"
             )
-            data  = fetch_json(url)
-            arts  = data.get("articles", [])
+            data = fetch_json(url)
+            if isinstance(data, dict) and "_error" in data:
+                results.append({"tag": tag, "error": data["_error"][:80]})
+                time.sleep(0.5); continue
+            arts = data.get("articles", []) if isinstance(data, dict) else []
+            if not arts:
+                # GDELT trả JSON hợp lệ nhưng rỗng — thường do throttle hoặc
+                # query không có kết quả trong 24h; ghi debug thay vì im lặng
+                results.append({"tag": tag,
+                                "error": f"0 bài (response: {str(data)[:60]})"})
             for a in arts[:3]:
                 results.append({
                     "tag":     tag,
@@ -720,12 +742,16 @@ RSS_SOURCES = [
     {"group": 2, "name": "BBC Business",                "url": "https://feeds.bbci.co.uk/news/business/rss.xml"},
 
     # CNN — RSS edition world
-    {"group": 2, "name": "CNN World",                   "url": "https://rss.cnn.com/rss/edition_world.rss"},
-    {"group": 3, "name": "CNN Business",                "url": "https://rss.cnn.com/rss/money_latest.rss"},
+    # CNN RSS bị chặn SSL với client không phải browser (lỗi lặp lại qua nhiều
+    # lần chạy) → thay bằng CNBC (feed ID ổn định lâu năm, không chặn bot)
+    {"group": 2, "name": "CNBC World News",             "url": "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=100727362"},
+    {"group": 3, "name": "CNBC Business",               "url": "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10001147"},
 
     # Reuters — đã tắt RSS trực tiếp 2020, dùng Google News RSS
-    {"group": 2, "name": "Reuters World (GNews)",       "url": "https://news.google.com/rss/search?q=when:24h+allinurl:reuters.com&hl=en-US&gl=US&ceid=US:en"},
-    {"group": 3, "name": "Reuters Business (GNews)",    "url": "https://news.google.com/rss/search?q=when:24h+allinurl:reuters.com+business&hl=en-US&gl=US&ceid=US:en"},
+    # GNews search endpoint bị Google chặn với IP datacenter (Feed rỗng lặp lại
+    # dù đã retry) → chuyển sang topic feed (ít bị chặn hơn endpoint search)
+    {"group": 2, "name": "Google News World",           "url": "https://news.google.com/rss/headlines/section/topic/WORLD?hl=en-US&gl=US&ceid=US:en"},
+    {"group": 3, "name": "Google News Business",        "url": "https://news.google.com/rss/headlines/section/topic/BUSINESS?hl=en-US&gl=US&ceid=US:en"},
 
     # NYT — RSS còn hoạt động (nội dung tóm tắt, full article có paywall)
     {"group": 2, "name": "NYT World",                   "url": "https://rss.nytimes.com/services/xml/rss/nyt/World.xml"},
@@ -736,7 +762,7 @@ RSS_SOURCES = [
     {"group": 3, "name": "Washington Post Business",    "url": "https://feeds.washingtonpost.com/rss/business"},
 
     # Bloomberg — không có public RSS, dùng Google News RSS về Bloomberg
-    {"group": 3, "name": "Bloomberg (GNews)",           "url": "https://news.google.com/rss/search?q=when:24h+allinurl:bloomberg.com&hl=en-US&gl=US&ceid=US:en"},
+    {"group": 3, "name": "MarketWatch Top Stories",     "url": "https://feeds.content.dowjones.io/public/rss/mw_topstories"},
     {"group": 6, "name": "Bloomberg Economics (GNews)", "url": "https://news.google.com/rss/search?q=when:24h+allinurl:bloomberg.com+fed+rate+economy&hl=en-US&gl=US&ceid=US:en"},
 
     # Giữ lại The Guardian + RFI
@@ -754,7 +780,7 @@ RSS_SOURCES = [
     # VnExpress — thường bị 503 do chặn bot, dùng VnEconomy + Tuổi Trẻ thay thế
     {"group": 3, "name": "VnEconomy Chứng khoán",      "url": "https://vneconomy.vn/chung-khoan.rss"},
     {"group": 3, "name": "VnEconomy Tài chính",        "url": "https://vneconomy.vn/tai-chinh.rss"},
-    {"group": 3, "name": "Tuổi Trẻ Kinh tế",           "url": "https://tuoitre.vn/rss/kinh-te.rss"},
+    {"group": 3, "name": "Tuổi Trẻ Kinh doanh",        "url": "https://tuoitre.vn/rss/kinh-doanh.rss"},
     {"group":13, "name": "Tuổi Trẻ Thời sự",           "url": "https://tuoitre.vn/rss/thoi-su.rss"},
     {"group":13, "name": "Nhân dân Thế giới",          "url": "https://nhandan.vn/rss/the-gioi.rss"},
     # Giữ VnExpress nhưng là backup
@@ -849,6 +875,27 @@ def decompress(data: bytes) -> bytes:
     return data
 
 
+def _regex_parse_rss(text: str) -> list:
+    """Parse RSS bằng regex khi XML sai chuẩn nặng (TTXVN...). Best-effort."""
+    items = []
+    def _tag(block, name):
+        m = re.search(rf'<{name}[^>]*>\s*(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?\s*</{name}>',
+                      block, re.S | re.I)
+        return (m.group(1).strip() if m else "")
+    for m in re.finditer(r'<item[\s>].*?</item>', text, re.S | re.I):
+        block   = m.group(0)
+        title   = re.sub(r'<[^>]+>', ' ', _tag(block, "title")).strip()
+        link    = _tag(block, "link")
+        desc    = re.sub(r'<[^>]+>', ' ', _tag(block, "description"))
+        desc    = re.sub(r'\s+', ' ', desc).strip()[:400]
+        pubdate = _tag(block, "pubDate")
+        if title:
+            items.append({"title": title, "link": link,
+                          "summary": desc, "published": pubdate[:50]})
+        if len(items) >= MAX_ITEMS_RSS: break
+    return items
+
+
 def _fetch_rss_once(url: str) -> list:
     req = urllib.request.Request(url, headers=RSS_HEADERS)
     try:
@@ -885,9 +932,17 @@ def _fetch_rss_once(url: str) -> list:
     except ET.ParseError:
         # Fix & không encode — lỗi phổ biến ở CafeF, nguồn VN
         text2 = re.sub(r'&(?!amp;|lt;|gt;|quot;|apos;|#)', '&amp;', text)
+        # Fix < trần trong nội dung (vd. KTTV: "mưa <10mm") — chỉ escape <
+        # KHÔNG theo sau bởi ký tự bắt đầu tag hợp lệ (chữ cái, /, !, ?)
+        text2 = re.sub(r'<(?![a-zA-Z/!?])', '&lt;', text2)
         try:
             root = ET.fromstring(text2.encode("utf-8"))
         except ET.ParseError as e2:
+            # Fallback cuối: feed viết sai chuẩn XML nặng (TTXVN) — trích
+            # <item> bằng regex thay vì bỏ cuộc
+            items = _regex_parse_rss(text)
+            if items:
+                return items
             return [{"error": f"XML: {str(e2)[:80]}"}]
 
     ns = {"atom": "http://www.w3.org/2005/Atom",
@@ -955,53 +1010,151 @@ def fetch_full_article(url: str) -> str:
         return ""
 
 
-def fetch_jina_content(url: str) -> str:
-    """Fetch Jina và trả về text sạch — ưu tiên các dòng markdown link dài
-    (tiêu đề bài viết thật) thay vì giữ nguyên đoạn văn/breadcrumb chung chung."""
-    req = urllib.request.Request(JINA_BASE + url, headers=JINA_HEADERS)
+ECON_SOCIAL_KEYWORDS = [
+    # Kinh tế - tài chính
+    "kinh tế","tài chính","ngân hàng","lãi suất","tỷ giá","tín dụng","chứng khoán",
+    "cổ phiếu","trái phiếu","đầu tư","gdp","lạm phát","cpi","xuất khẩu","nhập khẩu",
+    "thuế","ngân sách","fdi","bất động sản","đất đai","giá vàng","giá dầu","giá điện",
+    "doanh nghiệp","thị trường","thương mại","hải quan","đấu giá","đấu thầu",
+    "nghị quyết","nghị định","thông tư","quyết định","chỉ thị","luật","quy hoạch",
+    # Xã hội - chính sách lớn
+    "lương","bảo hiểm","y tế","giáo dục","hạ tầng","cao tốc","metro","sân bay",
+    "điện","năng lượng","chuyển đổi số","công nghệ","bán dẫn","ai ",
+    # English (White House...)
+    "econom","tariff","trade","tax","interest rate","inflation","invest",
+    "energy","chip","semiconductor","sanction","executive order","budget",
+]
+
+
+def _score_econ_relevance(title: str) -> int:
+    """Đếm số keyword kinh tế-tài chính-xã hội khớp trong tiêu đề."""
+    t = title.lower()
+    return sum(1 for kw in ECON_SOCIAL_KEYWORDS if kw in t)
+
+
+def _extract_links_from_html(url: str) -> list:
+    """Fallback khi Jina lỗi (vd. 422): fetch thẳng HTML gốc và trích link <a>.
+    Hoạt động tốt với trang server-rendered (GSO WordPress, vbpl ASP.NET...)."""
     try:
+        req = urllib.request.Request(url, headers=RSS_HEADERS)
+        with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT) as resp:
+            raw = decompress(resp.read())
+        html = raw.decode("utf-8", errors="replace")
+        # <a href="...">tiêu đề</a> — cho phép thẻ lồng bên trong, strip tag sau
+        pairs = []
+        for m in re.finditer(r'<a\s[^>]*href="([^"]+)"[^>]*>(.*?)</a>', html, re.S | re.I):
+            href, inner = m.group(1), m.group(2)
+            title = re.sub(r'<[^>]+>', ' ', inner)
+            title = re.sub(r'\s+', ' ', title).strip()
+            if len(title) < 20: continue
+            if href.startswith("/"):
+                base = re.match(r'(https?://[^/]+)', url)
+                href = (base.group(1) if base else url.rstrip("/")) + href
+            if not href.startswith("http"): continue
+            pairs.append((title, href))
+        return pairs
+    except Exception:
+        return []
+
+
+def _filter_headline(title: str, href: str, source_url: str, noise: set, seen: set) -> bool:
+    """True nếu đây là headline bài viết thật đáng giữ."""
+    tl = title.lower()
+    if any(n in tl for n in noise): return False
+    # Loại link ảnh/markdown image lọt vào ([![Image 26: ads](...)
+    if title.startswith("!") or "![image" in tl or "image " in tl[:12]: return False
+    if "ads" == tl or tl.startswith("ads"): return False
+    # Loại widget thời tiết kiểu "Lai Châu 22° - 23°..."
+    if "°" in title: return False
+    # Loại nav tiếng Anh của SharePoint/ASP.NET (PCTT): "Turn on more accessible mode"
+    if tl.startswith(("turn on", "turn off", "skip ribbon", "sign in")): return False
+    if not re.search(r'[.!?]| ', title): return False   # nhãn 1 từ
+    # Loại link trỏ về CHÍNH trang danh sách (nav item không có bài riêng)
+    if href.rstrip("/") == source_url.rstrip("/"): return False
+    if href in seen or title in seen: return False       # dedupe
+    return True
+
+
+def fetch_jina_content(url: str) -> str:
+    """Fetch Jina và trả về danh sách headline dạng '- [tiêu đề](link)'.
+    Nếu Jina lỗi (vd. 422) → fallback fetch thẳng HTML gốc để trích link."""
+    noise = {"cookie","javascript","subscribe","sign in","log in",
+             "advertisement","đăng nhập","đăng ký","skip to content",
+             "toggle navigation","menu","weather","thời tiết",
+             "trang chủ","liên hệ","sơ đồ","giới thiệu cổng",
+             "thư điện tử","văn phòng điện tử","lịch công tác",
+             "đặt tạp chí","đặt báo","mua báo","quảng cáo","podcast",
+             "youtube","rss","tải app","app store","google play"}
+
+    jina_err = ""
+    text = ""
+    try:
+        req = urllib.request.Request(JINA_BASE + url, headers=JINA_HEADERS)
         with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT) as resp:
             raw = decompress(resp.read())
             text = raw.decode("utf-8", errors="replace")
+    except Exception as e:
+        jina_err = str(e)[:80]
 
-        noise = {"cookie","javascript","subscribe","sign in","log in",
-                 "advertisement","đăng nhập","đăng ký","skip to content",
-                 "toggle navigation","menu","weather","thời tiết",
-                 "trang chủ","liên hệ","sơ đồ","giới thiệu cổng",
-                 "thư điện tử","văn phòng điện tử","lịch công tác"}
+    headline_candidates, seen = [], set()
 
-        lines = text.split("\n")
-
-        # Pass 1: trích các dòng markdown link [tiêu đề dài](url) — đây gần như
-        # luôn là headline bài viết thật trên trang tin tức/chỉ đạo điều hành,
-        # khác với link menu ngắn kiểu [Trang chủ](...) hay [Liên hệ](...).
+    if text:
         link_pattern = re.compile(r'\[([^\]]{15,200})\]\((https?://[^\)]+)\)')
-        headline_candidates = []
-        for line in lines:
+        for line in text.split("\n"):
             for m in link_pattern.finditer(line):
                 title, href = m.group(1).strip(), m.group(2).strip()
-                if any(n in title.lower() for n in noise): continue
-                if re.match(r'^(image|hình ảnh|icon)\b', title.lower()): continue
-                if not re.search(r'[.!?]| ', title): continue  # loại nhãn 1 từ
+                if _filter_headline(title, href, url, noise, seen):
+                    headline_candidates.append((title, href))
+                    seen.add(href); seen.add(title)
+
+    # Fallback: Jina lỗi HOẶC Jina thành công nhưng không trích được gì
+    # (trang JS-render một phần) → thử HTML gốc
+    if len(headline_candidates) < 3:
+        for title, href in _extract_links_from_html(url):
+            if _filter_headline(title, href, url, noise, seen):
                 headline_candidates.append((title, href))
+                seen.add(href); seen.add(title)
 
-        if len(headline_candidates) >= 3:
-            out = [f"- [{t}]({h})" for t, h in headline_candidates[:20]]
-            return ("\n".join(out))[:5000]
+    if len(headline_candidates) >= 3:
+        # Sắp xếp: headline liên quan kinh tế-tài chính-xã hội lên đầu
+        headline_candidates.sort(key=lambda th: -_score_econ_relevance(th[0]))
+        out = [f"- [{t}]({h})" for t, h in headline_candidates[:15]]
+        return ("\n".join(out))[:5000]
 
-        # Pass 2 (fallback): trang không theo cấu trúc link-danh-sách rõ ràng
-        # (vd. trang thông báo đơn lẻ) — dùng lọc đoạn văn như cũ.
+    # Pass cuối: trang thông báo đơn lẻ không có danh sách link — lọc đoạn văn
+    if text:
         out = []
-        for line in lines:
+        for line in text.split("\n"):
             s = line.strip()
             if len(s) < 20: continue
             if re.match(r'^https?://\S+$', s): continue
             if re.match(r'^[=\-_*#|]{3,}$', s): continue
             if any(n in s.lower() for n in noise): continue
             out.append(s)
-        return "\n".join(out[:150])[:5000]
-    except Exception as e:
-        return f"[Lỗi Jina: {str(e)[:80]}]"
+        if out:
+            return "\n".join(out[:150])[:5000]
+
+    return f"[Lỗi Jina: {jina_err or 'không trích được nội dung nào'}]"
+
+
+def enrich_jina_with_articles(content: str, max_articles: int = 2) -> str:
+    """Nhận danh sách headline '- [t](h)', chọn tối đa N bài NỔI BẬT nhất về
+    kinh tế-tài chính-xã hội, đọc full qua Jina và đính kèm trích đoạn.
+    Đây là bước 'trích thông tin chi tiết' thay vì chỉ liệt kê đầu mục."""
+    pairs = re.findall(r'^- \[(.+?)\]\((https?://[^\)]+)\)$', content, re.M)
+    if not pairs:
+        return content
+    scored = sorted(pairs, key=lambda th: -_score_econ_relevance(th[0]))
+    extras = []
+    for title, href in scored[:max_articles]:
+        if _score_econ_relevance(title) == 0:
+            break   # danh sách đã sort — gặp bài 0 điểm thì các bài sau cũng 0
+        body = fetch_full_article(href)
+        if body:
+            excerpt = body[:900]
+            extras.append(f"\n📌 **Chi tiết nổi bật: {title}**\n> {excerpt}")
+            time.sleep(0.5)
+    return content + ("\n" + "\n".join(extras) if extras else "")
 
 
 def collect_all_rss(last_run_utc: datetime.datetime) -> dict:
@@ -1017,9 +1170,13 @@ def collect_all_rss(last_run_utc: datetime.datetime) -> dict:
         if "jina" in src:
             print(f"  [Jina] {src['name']}...")
             content = fetch_jina_content(src["jina"])
+            ok = not content.startswith("[Lỗi")
+            if ok:
+                # Đọc sâu 2 bài nổi bật nhất về kinh tế-tài chính-xã hội
+                content = enrich_jina_with_articles(content, max_articles=2)
             result = {
                 "name": src["name"], "mode": "Jina",
-                "ok": not content.startswith("[Lỗi"),
+                "ok": ok,
                 "items": [], "jina_content": content, "important_count": 0
             }
             by_group[gid]["sources"].append(result)
@@ -1231,7 +1388,11 @@ def build_markdown(api_data: dict, rss_data: dict,
                 lines.append(f"- {title} *{src}*{tone_s}")
         lines.append("")
     else:
-        lines.append("> ⚠️ GDELT API: Không có dữ liệu")
+        gd_errs = [f"{x.get('tag','?')}: {x.get('error','?')}" for x in gd_data if "error" in x]
+        if gd_errs:
+            lines.append(f"> ⚠️ GDELT API: Không có dữ liệu. Debug: {' | '.join(gd_errs[:3])}")
+        else:
+            lines.append("> ⚠️ GDELT API: Không có dữ liệu (không có debug — hàm không trả gì)")
     lines += ["---", ""]
 
     # ── World Bank VN ───────────────────────────────────────────────────
@@ -1392,9 +1553,22 @@ def main():
     # Thu thập API
     print("[API] Lấy số liệu thị trường...")
     api_data = {}
+    market_cache = load_market_cache()
+    vn_now_str = (utc_now + datetime.timedelta(hours=TIMEZONE_OFFSET)).strftime("%Y-%m-%d %H:%M ICT")
 
     print("  [API] Giá vàng/bạc...")
     api_data["gold"] = get_gold_prices()
+    if api_data["gold"].get("xau_usd"):
+        market_cache["gold"] = {k: api_data["gold"].get(k) for k in
+                                ("xau_usd","xag_usd","sjc_vnd","sjc_buy","source")}
+        market_cache["gold"]["cached_at"] = vn_now_str
+    elif market_cache.get("gold", {}).get("xau_usd"):
+        # API lỗi → dùng giá gần nhất từ cache, ghi rõ là giá cũ
+        cached = market_cache["gold"]
+        api_data["gold"].update({k: cached.get(k) for k in
+                                 ("xau_usd","xag_usd","sjc_vnd","sjc_buy")})
+        api_data["gold"]["source"] = f"{cached.get('source','?')} (giá gần nhất, lưu {cached.get('cached_at','?')})"
+        api_data["gold"]["error"]  = ""   # có giá (cũ) rồi — không cần cảnh báo lỗi nữa
     print(f"        XAU/USD = {api_data['gold'].get('xau_usd')} ({api_data['gold'].get('source')})")
 
     print("  [API] Tỷ giá...")
@@ -1418,6 +1592,25 @@ def main():
 
     print("  [API] VNIndex + HNX-Index...")
     api_data["vnindex"] = get_vnindex()
+    vi = api_data["vnindex"]
+    if vi.get("vnindex"):
+        market_cache["vnindex"] = {k: vi.get(k) for k in
+                                   ("vnindex","vnindex_change","vnindex_pct",
+                                    "hnx","hnx_change","total_value_bn","source")}
+        market_cache["vnindex"]["cached_at"] = vn_now_str
+    elif market_cache.get("vnindex", {}).get("vnindex"):
+        # Thị trường đóng cửa (T7/CN) hoặc API lỗi → trả giá ĐÓNG CỬA PHIÊN
+        # GẦN NHẤT từ cache thay vì N/A
+        cached  = market_cache["vnindex"]
+        is_wknd = (utc_now + datetime.timedelta(hours=TIMEZONE_OFFSET)).weekday() >= 5
+        reason  = "thị trường nghỉ cuối tuần" if is_wknd else "API lỗi"
+        vi.update({k: cached.get(k) for k in
+                   ("vnindex","vnindex_change","vnindex_pct",
+                    "hnx","hnx_change","total_value_bn")})
+        vi["source"] = f"Đóng cửa phiên gần nhất — {reason} (lưu {cached.get('cached_at','?')})"
+        vi["error"]  = ""
+
+    save_market_cache(market_cache)
 
     print("  [API] WHO Disease Outbreaks...")
     api_data["who_outbreaks"] = get_who_outbreaks(last_run_utc)
