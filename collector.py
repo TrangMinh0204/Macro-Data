@@ -464,6 +464,19 @@ def _vnindex_plausible(v) -> bool:
         return False
 
 
+def _http_err_detail(e: Exception) -> str:
+    """Trích status code + 150 ký tự đầu response body (nếu có) từ HTTPError.
+    Giúp phân biệt 'WAF trả trang chặn giả dạng lỗi' vs 'endpoint đổi thật' ở
+    lần debug tiếp theo, thay vì chỉ có mã lỗi trần trụi không rõ nguyên nhân."""
+    if isinstance(e, urllib.error.HTTPError):
+        try:
+            body = e.read(200).decode("utf-8", errors="replace").replace("\n", " ").strip()
+        except Exception:
+            body = ""
+        return f"HTTP {e.code}" + (f" | body: {body[:150]}" if body else "")
+    return str(e)[:80]
+
+
 def get_vnindex() -> dict:
     """VNIndex + HNX-Index từ SSI iBoard API (public, không cần key)"""
     result = {
@@ -518,7 +531,7 @@ def get_vnindex() -> dict:
         elif d.get("indexValue"):
             result["_ssi_err"] = f"Giá trị vô lý bị loại: {d.get('indexValue')}"
     except Exception as e:
-        result["_ssi_err"] = str(e)[:80]
+        result["_ssi_err"] = _http_err_detail(e)
 
     # Nguồn 2: TCBS public market summary
     try:
@@ -542,7 +555,7 @@ def get_vnindex() -> dict:
         elif d3.get("indexValue"):
             result["_tcbs_err"] = f"Giá trị vô lý bị loại: {d3.get('indexValue')}"
     except Exception as e2:
-        result["_tcbs_err"] = str(e2)[:80]
+        result["_tcbs_err"] = _http_err_detail(e2)
 
     # Nguồn 3: VNDirect dchart (public chart API, thường không chặn IP datacenter
     # như SSI/TCBS) — lấy nến ngày gần nhất, dùng giá đóng cửa 'c' làm indexValue.
@@ -575,7 +588,7 @@ def get_vnindex() -> dict:
         else:
             result["_vndirect_err"] = f"Không có dữ liệu (status={d_dc.get('s')})"
     except Exception as e_dc:
-        result["_vndirect_err"] = str(e_dc)[:80]
+        result["_vndirect_err"] = _http_err_detail(e_dc)
 
     # Nguồn 4: Jina đọc CafeF bảng giá (fallback cuối) — regex có thể bắt nhầm số rác
     # nên BẮT BUỘC qua sanity-check; nguồn này không có change/pct đáng tin cậy
