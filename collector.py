@@ -290,17 +290,29 @@ def get_gdelt_geopolitics() -> list:
         ("US China trade war 2026", "US-CN"),
     ]
     for query, tag in queries:
+        url = (
+            "https://api.gdeltproject.org/api/v2/doc/doc"
+            f"?query={urllib.parse.quote(query)}"
+            "&mode=artlist&maxrecords=5&format=json"
+            "&timespan=24h&sort=hybridrel"
+        )
+        data = None
+        for attempt in range(2):   # thử tối đa 2 lần nếu bị 429
+            try:
+                data = fetch_json(url)
+                err = data.get("_error", "") if isinstance(data, dict) else ""
+                if "429" in err or "Too Many Requests" in err:
+                    if attempt == 0:
+                        time.sleep(3)   # nghỉ dài hơn rồi thử lại 1 lần
+                        continue
+                break
+            except Exception as e:
+                data = {"_error": str(e)[:80]}
+                break
         try:
-            url = (
-                "https://api.gdeltproject.org/api/v2/doc/doc"
-                f"?query={urllib.parse.quote(query)}"
-                "&mode=artlist&maxrecords=5&format=json"
-                "&timespan=24h&sort=hybridrel"
-            )
-            data = fetch_json(url)
             if isinstance(data, dict) and "_error" in data:
                 results.append({"tag": tag, "error": data["_error"][:80]})
-                time.sleep(0.5); continue
+                time.sleep(1.5); continue
             arts = data.get("articles", []) if isinstance(data, dict) else []
             if not arts:
                 # GDELT trả JSON hợp lệ nhưng rỗng — thường do throttle hoặc
@@ -316,7 +328,7 @@ def get_gdelt_geopolitics() -> list:
                     "seendate": a.get("seendate",""),
                     "tone":    a.get("tone"),
                 })
-            time.sleep(0.5)
+            time.sleep(1.5)   # tăng từ 0.5s — giảm khả năng đụng rate limit
         except Exception as e:
             results.append({"tag": tag, "error": str(e)[:80]})
     return results
@@ -464,17 +476,33 @@ def _vnindex_plausible(v) -> bool:
         return False
 
 
+def _sanitize_for_markdown(s: str, max_len: int = 150) -> str:
+    """Loại toàn bộ ký tự không in được / control char trước khi đưa vào
+    report markdown — chặn đứng lớp lỗi 'rác nhị phân lọt vào output' bất kể
+    nó đến từ đâu (gzip chưa giải nén, encoding sai, response nhị phân...)."""
+    if not s: return ""
+    cleaned = "".join(c for c in s if c.isprintable() or c in " \t")
+    cleaned = re.sub(r"\s+", " ", cleaned).strip()
+    if not cleaned:
+        return "[không đọc được nội dung — có thể là dữ liệu nhị phân]"
+    return cleaned[:max_len]
+
+
 def _http_err_detail(e: Exception) -> str:
-    """Trích status code + 150 ký tự đầu response body (nếu có) từ HTTPError.
-    Giúp phân biệt 'WAF trả trang chặn giả dạng lỗi' vs 'endpoint đổi thật' ở
-    lần debug tiếp theo, thay vì chỉ có mã lỗi trần trụi không rõ nguyên nhân."""
+    """Trích status code + tối đa 150 ký tự đầu response body (nếu có) từ
+    HTTPError. Đọc TOÀN BỘ body trước khi giải nén — cắt sớm giữa luồng gzip
+    sẽ làm hỏng dữ liệu và ra ký tự rác khi decode. Luôn sanitize trước khi
+    trả về để không bao giờ làm hỏng report markdown."""
     if isinstance(e, urllib.error.HTTPError):
         try:
-            body = e.read(200).decode("utf-8", errors="replace").replace("\n", " ").strip()
+            raw = e.read()               # đọc hết, không giới hạn n ở đây
+            raw = decompress(raw)        # gzip/zlib nếu có, dùng hàm decompress() đã có
+            body = raw[:500].decode("utf-8", errors="replace")
+            body = _sanitize_for_markdown(body)
         except Exception:
             body = ""
-        return f"HTTP {e.code}" + (f" | body: {body[:150]}" if body else "")
-    return str(e)[:80]
+        return f"HTTP {e.code}" + (f" | body: {body}" if body else "")
+    return _sanitize_for_markdown(str(e), 80)
 
 
 def get_vnindex() -> dict:
@@ -562,7 +590,7 @@ def get_vnindex() -> dict:
     try:
         now_ts = int(time.time())
         url_dc = ("https://dchart-api.vndirect.com.vn/dchart/history"
-                  f"?resolution=1D&symbol=VNINDEX&from={now_ts-7*86400}&to={now_ts}")
+                  f"?resolution=D&symbol=VNINDEX&from={now_ts-7*86400}&to={now_ts}")
         req_dc = urllib.request.Request(url_dc, headers={
             **RSS_HEADERS,
             "Accept": "application/json",
@@ -1141,6 +1169,8 @@ def _extract_links_from_html(url: str) -> list:
         return []
 
 
+_AD_DOMAINS = ("trumpaccounts.gov", "trumpcard.gov", "my.community.com")
+
 _ARTICLE_URL_REQUIRED = {
     # domain → regex mà href PHẢI khớp mới được coi là bài viết thật.
     # Chỉ áp cho domain đã quan sát thấy hay lẫn link menu/nav vào danh sách
@@ -1175,6 +1205,7 @@ def _filter_headline(title: str, href: str, source_url: str, noise: set, seen: s
     # Loại link trỏ về CHÍNH trang danh sách (nav item không có bài riêng)
     if href.rstrip("/") == source_url.rstrip("/"): return False
     if href in seen or title in seen: return False       # dedupe
+    if any(ad in href for ad in _AD_DOMAINS): return False
     # Domain hay lẫn menu (White House, PCTT): bắt buộc href đúng cấu trúc bài viết
     if not _passes_article_url_pattern(href): return False
     return True
@@ -1227,7 +1258,12 @@ def fetch_jina_content(url: str) -> str:
              # Nav cố định VNDMS/PCTT
              "chú giải","turn on more accessible","turn off more accessible",
              "sơ đồ tổ chức","chức năng, nhiệm vụ","đơn vị trực thuộc",
-             "ban chỉ huy pctt"}
+             "ban chỉ huy pctt",
+             # Banner quảng cáo lặp lại trên MỌI trang whitehouse.gov (không
+             # phải tin tức) — phát hiện 30/7: xuất hiện giống hệt ở cả 5
+             # nguồn WH, đẩy hết nội dung thật ra khỏi danh sách headline
+             "trump accounts for children","the trump gold card",
+             "text win to","for alerts"}
 
     jina_err = ""
     text = ""
