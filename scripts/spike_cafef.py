@@ -1,20 +1,23 @@
 """
-Spike test: xác nhận GitHub Actions tải được file ZIP dữ liệu CafeF.
+Spike test v2: xác nhận GitHub Actions tải được ZIP CafeF NGÀY MỚI NHẤT.
 
-Kiểm tra 4 điều:
-  1. Actions truy cập được trang download cafef.vn (không bị chặn IP)
-  2. Tìm được link ZIP "Số liệu GD (Upto)" và "Số liệu cung cầu (Upto)"
-  3. Tải và giải nén được ZIP
-  4. Nội dung hợp lệ: có VNINDEX, đếm được số dòng/số mã
+Sửa so với v1: v1 sắp link theo chữ cái (tăng dần) nên luôn dính ngày cũ nhất.
+v2 trích ngày từ URL, gom link theo ngày, thử từ ngày MỚI NHẤT lùi dần,
+và nhắm đúng 4 họ file mục tiêu của Job B:
+  - SolieuGD.Upto      (giá ĐÃ điều chỉnh, 3 sàn)
+  - SolieuGD.Raw.Upto  (giá CHƯA điều chỉnh, 3 sàn)
+  - Index.Upto         (chỉ số)
+  - CCNN.Upto          (cung cầu + khối ngoại theo sàn)
 
-Chỉ đọc và in log — KHÔNG ghi file nào vào repo.
-Exit 0 = spike PASS (đi thẳng SP1). Exit 1 = spike FAIL (kích hoạt nhánh Worker proxy).
+Chỉ đọc và in log — KHÔNG ghi file vào repo.
+Exit 0 = PASS. Exit 1 = FAIL.
 """
 
 import io
 import re
 import sys
 import zipfile
+from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 
 import requests
@@ -31,14 +34,24 @@ HEADERS = {
     "Referer": "https://cafef.vn/",
 }
 
-# Pattern URL lịch sử — đường dự phòng nếu không parse được trang
-# {d8} = YYYYMMDD (thư mục), {d8b} = DDMMYYYY (tên file)
-FALLBACK_PATTERNS = [
-    "https://cafef1.mediacdn.vn/data/ami_data/{d8}/CafeF.SolieuGD.Upto{d8b}.zip",
-    "https://cafef1.mediacdn.vn/data/ami_data/{d8}/CafeF.Index.Upto{d8b}.zip",
-    "https://cafef1.mediacdn.vn/data/ami_data/{d8}/CafeF.CungCau.Upto{d8b}.zip",
-]
+# 4 họ file mục tiêu — khớp bằng regex trên TÊN FILE trong URL
+TARGET_FAMILIES = {
+    "gia_dieu_chinh": re.compile(r"CafeF\.SolieuGD\.Upto\d{8}\.zip$", re.I),
+    "gia_chua_dieu_chinh": re.compile(r"CafeF\.SolieuGD\.Raw\.Upto\d{8}\.zip$", re.I),
+    "index": re.compile(r"CafeF\.Index\.Upto\d{8}\.zip$", re.I),
+    "cung_cau": re.compile(r"CafeF\.CCNN\.Upto\d{8}\.zip$", re.I),
+}
 
+# Pattern dự phòng nếu không parse được trang (đã xác nhận từ spike v1)
+FALLBACK_BASE = "https://cafef1.mediacdn.vn/data/ami_data/{d8}/CafeF.{fam}Upto{d8b}.zip"
+FALLBACK_FAMS = {
+    "gia_dieu_chinh": "SolieuGD.",
+    "gia_chua_dieu_chinh": "SolieuGD.Raw.",
+    "index": "Index.",
+    "cung_cau": "CCNN.",
+}
+
+DATE_IN_URL = re.compile(r"/ami_data/(\d{8})/")
 VN_TZ = timezone(timedelta(hours=7))
 
 
@@ -46,51 +59,43 @@ def log(msg: str) -> None:
     print(msg, flush=True)
 
 
-def fetch(url: str, binary: bool = False, timeout: int = 60):
-    """GET một URL, trả (status_code, content|text, err_note)."""
+def fetch(url: str, binary: bool = False, timeout: int = 120):
     try:
         r = requests.get(url, headers=HEADERS, timeout=timeout)
-        body = r.content if binary else r.text
-        return r.status_code, body, ""
+        return r.status_code, (r.content if binary else r.text), ""
     except requests.RequestException as e:
         return 0, b"" if binary else "", f"{type(e).__name__}: {e}"
 
 
-def discover_zip_links(html: str) -> list[str]:
-    """Trích mọi href .zip trên trang download, ưu tiên link có Upto/SolieuGD/CungCau."""
+def discover_links_by_date(html: str) -> dict[str, dict[str, str]]:
+    """Trả về {YYYYMMDD: {family: url}} — chỉ giữ link thuộc 4 họ mục tiêu."""
     links = re.findall(r'href=["\']([^"\']+\.zip)["\']', html, flags=re.IGNORECASE)
-    # Chuẩn hóa link tương đối
-    norm = []
+    by_date: dict[str, dict[str, str]] = defaultdict(dict)
     for u in links:
         if u.startswith("//"):
             u = "https:" + u
         elif u.startswith("/"):
             u = "https://cafef.vn" + u
-        norm.append(u)
-    # Ưu tiên các file mục tiêu, loại trùng, giữ thứ tự
-    seen, ordered = set(), []
-    keywords = ("upto", "solieugd", "cungcau", "index")
-    for u in sorted(norm, key=lambda x: (not any(k in x.lower() for k in keywords), x)):
-        if u not in seen:
-            seen.add(u)
-            ordered.append(u)
-    return ordered
+        m = DATE_IN_URL.search(u)
+        if not m:
+            continue
+        d8 = m.group(1)
+        for fam, pat in TARGET_FAMILIES.items():
+            if pat.search(u):
+                by_date[d8][fam] = u
+    return dict(by_date)
 
 
-def try_zip(url: str) -> bool:
-    """Tải 1 ZIP, giải nén trong RAM, kiểm tra nội dung. True nếu hợp lệ."""
-    log(f"\n--- Thử tải: {url}")
-    status, body, err = fetch(url, binary=True, timeout=120)
+def check_zip(fam: str, url: str) -> bool:
+    """Tải ZIP, giải nén trong RAM, in cấu trúc, kiểm tra hợp lệ."""
+    log(f"\n--- [{fam}] {url}")
+    status, body, err = fetch(url, binary=True)
     if err:
         log(f"    LỖI mạng: {err}")
         return False
     log(f"    HTTP {status} | {len(body):,} bytes")
-    if status != 200 or len(body) < 10_000:
-        preview = body[:200].decode("utf-8", errors="replace") if body else ""
-        log(f"    Không phải ZIP hợp lệ. Preview: {preview!r}")
-        return False
-    if not body[:2] == b"PK":
-        log("    Body không có magic 'PK' — không phải ZIP.")
+    if status != 200 or not body[:2] == b"PK":
+        log("    Không phải ZIP hợp lệ.")
         return False
     try:
         zf = zipfile.ZipFile(io.BytesIO(body))
@@ -98,32 +103,28 @@ def try_zip(url: str) -> bool:
         log(f"    BadZipFile: {e}")
         return False
     names = zf.namelist()
-    log(f"    ZIP OK — {len(names)} file bên trong: {names[:5]}")
-    ok_any = False
-    for name in names[:3]:  # đọc tối đa 3 file đầu
+    log(f"    ZIP OK — {len(names)} file: {names}")
+    ok = False
+    for name in names[:2]:
         raw = zf.read(name)
         text = raw.decode("utf-8", errors="replace")
         lines = text.splitlines()
         log(f"    > {name}: {len(raw):,} bytes, {len(lines):,} dòng")
-        for ln in lines[:3]:
+        for ln in lines[:2]:
             log(f"      | {ln[:160]}")
-        has_vnindex = "VNINDEX" in text.upper()
-        log(f"      VNINDEX xuất hiện: {has_vnindex}")
-        # Đếm sơ bộ số mã (cột đầu mỗi dòng CSV)
-        tickers = {ln.split(",")[0].strip().upper() for ln in lines[1:5000] if "," in ln}
-        log(f"      Số mã (mẫu 5000 dòng đầu): ~{len(tickers)}")
+        # Ngày dữ liệu mới nhất trong file (cột 2, đếm từ cuối lên cho nhanh)
+        last_dates = {ln.split(",")[1] for ln in lines[-200:] if ln.count(",") >= 2}
+        if last_dates:
+            log(f"      Ngày mới nhất trong file: {max(last_dates)}")
         if len(lines) > 100:
-            ok_any = True
-    return ok_any
+            ok = True
+    return ok
 
 
 def main() -> int:
     now_vn = datetime.now(VN_TZ)
-    log(f"=== SPIKE TEST CAFEF === {now_vn:%Y-%m-%d %H:%M} (giờ VN)")
+    log(f"=== SPIKE TEST CAFEF v2 === {now_vn:%Y-%m-%d %H:%M} (giờ VN)")
 
-    passed_urls: list[str] = []
-
-    # Bước 1: trang download
     log(f"\n[1] GET trang download: {DOWNLOAD_PAGE}")
     status, html, err = fetch(DOWNLOAD_PAGE)
     if err:
@@ -132,40 +133,45 @@ def main() -> int:
     else:
         log(f"    HTTP {status} | {len(html):,} ký tự")
 
-    # Bước 2: khám phá link từ trang
-    zip_links = discover_zip_links(html) if html else []
-    log(f"\n[2] Link .zip tìm thấy trên trang: {len(zip_links)}")
-    for u in zip_links[:10]:
-        log(f"    - {u}")
+    by_date = discover_links_by_date(html) if html else {}
+    dates_desc = sorted(by_date.keys(), reverse=True)
+    log(f"\n[2] Các ngày có link trên trang (mới → cũ): {dates_desc}")
+    for d in dates_desc:
+        log(f"    {d}: {sorted(by_date[d].keys())}")
 
-    for u in zip_links[:4]:
-        if try_zip(u):
-            passed_urls.append(u)
+    # Thử từ ngày MỚI NHẤT, lùi dần; yêu cầu đủ cả 4 họ file cùng một ngày
+    for d8 in dates_desc:
+        fams = by_date[d8]
+        missing = set(TARGET_FAMILIES) - set(fams)
+        log(f"\n[3] Thử ngày {d8} — có {len(fams)}/4 họ file"
+            + (f", thiếu: {sorted(missing)}" if missing else ""))
+        results = {fam: check_zip(fam, url) for fam, url in sorted(fams.items())}
+        if all(results.get(f) for f in TARGET_FAMILIES):
+            log("\n" + "=" * 60)
+            log(f"KẾT QUẢ: PASS ✅ — đủ 4/4 file hợp lệ cho ngày {d8}.")
+            log("URL chốt cho Job B:")
+            for fam in sorted(fams):
+                log(f"  [{fam}] {fams[fam]}")
+            log("=> Ngày mới nhất được lấy đúng. Sẵn sàng viết Job B.")
+            return 0
+        log(f"    Ngày {d8} chưa đủ 4/4 hợp lệ — lùi ngày kế.")
 
-    # Bước 3: fallback pattern lịch sử (lùi tối đa 5 ngày)
-    if not passed_urls:
-        log("\n[3] Không có link nào từ trang chạy được — thử pattern URL lịch sử:")
-        for back in range(0, 6):
-            d = now_vn - timedelta(days=back)
-            for pat in FALLBACK_PATTERNS:
-                url = pat.format(d8=d.strftime("%Y%m%d"), d8b=d.strftime("%d%m%Y"))
-                if try_zip(url):
-                    passed_urls.append(url)
-            if passed_urls:
-                break
+    # Fallback pattern (không parse được trang): thử lùi 5 ngày
+    log("\n[4] Fallback pattern URL (trang không parse được):")
+    for back in range(0, 6):
+        d = now_vn - timedelta(days=back)
+        d8, d8b = d.strftime("%Y%m%d"), d.strftime("%d%m%Y")
+        urls = {fam: FALLBACK_BASE.format(d8=d8, fam=pre, d8b=d8b)
+                for fam, pre in FALLBACK_FAMS.items()}
+        results = {fam: check_zip(fam, url) for fam, url in sorted(urls.items())}
+        if all(results.values()):
+            log("\n" + "=" * 60)
+            log(f"KẾT QUẢ: PASS ✅ (qua fallback) — đủ 4/4 file ngày {d8}.")
+            return 0
 
-    # Kết luận
     log("\n" + "=" * 60)
-    if passed_urls:
-        log("KẾT QUẢ: PASS ✅ — GitHub Actions tải & parse được ZIP CafeF.")
-        log("URL dùng được cho Job B:")
-        for u in passed_urls:
-            log(f"  {u}")
-        log("=> Đi thẳng SP1, KHÔNG cần Cloudflare Worker.")
-        return 0
-    log("KẾT QUẢ: FAIL ❌ — không tải được ZIP nào từ Actions runner.")
-    log("=> Kích hoạt nhánh dự phòng: Cloudflare Worker proxy (mục 10 design doc).")
-    log("   Dán TOÀN BỘ log này về chat để Claude chẩn đoán nguyên nhân cụ thể.")
+    log("KẾT QUẢ: FAIL ❌ — không gom đủ 4 họ file hợp lệ cho bất kỳ ngày nào.")
+    log("Dán TOÀN BỘ log về chat để Claude chẩn đoán.")
     return 1
 
 
