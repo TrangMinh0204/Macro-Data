@@ -2,7 +2,6 @@ name: Price Data (Job B)
 
 on:
   schedule:
-    # 11:15 UTC = 18:15 giờ VN (UTC+7), các ngày thứ Hai–thứ Sáu
     - cron: "15 11 * * 1-5"
   workflow_dispatch:
 
@@ -25,11 +24,8 @@ jobs:
       - name: Install deps
         run: pip install requests
 
-      - name: Tải & chọn ngày dữ liệu (T1)
+      - name: Tai va chon ngay du lieu
         run: python scripts/price_collector.py
 
-      - name: Xác nhận PRICE_DATE
-        run: echo "Ngày dữ liệu đã chọn: $PRICE_DATE"
-
-      # Các bước T2 (parse -> cache CSV), T3 (snapshot) sẽ nối thêm ở đây
-      # trong các lần giao code kế tiếp — T1 dừng lại sau bước tải + chọn ngày.
+      - name: Xac nhan PRICE_DATE
+        run: echo "Ngay du lieu da chon $PRICE_DATE"
