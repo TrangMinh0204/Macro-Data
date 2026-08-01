@@ -1,0 +1,92 @@
+# Danh sách mã cache lịch sử giá (SP1 — Data Layer)
+#
+# VN30: rổ hiệu lực từ 03/08/2026 (kỳ cơ cấu quý 3/2026 của HoSE).
+#   Thay đổi so với rổ trước: THÊM MCH, TCX — LOẠI TPB, PLX.
+#   Nguồn đối chiếu: HoSE công bố 15/07/2026 + Vietstock bảng giá điện tử.
+#   Trước ngày 03/08/2026, rổ thật sự giao dịch vẫn còn TPB/PLX — nếu Job B
+#   chạy trong khoảng 01–02/08/2026 mà cần khớp chính xác rổ đang live,
+#   dùng tạm rổ cũ (thay MCH,TCX -> PLX,TPB). Từ 03/08/2026 trở đi dùng
+#   nguyên văn danh sách dưới đây.
+#
+# HNX30: rổ hiện hành, nguồn Vietstock bảng giá điện tử.
+#
+# Ghi chú vận hành: rổ VN30/HNX30 được HoSE/HNX rà soát định kỳ mỗi 6 tháng
+# (tháng 1 và tháng 7). File này cần rà soát lại vào khoảng cuối tháng 1 và
+# cuối tháng 7 hàng năm — không tự động, vì nguồn công bố không có API ổn định.
+
+vn30:
+  - ACB
+  - BID
+  - BSR
+  - CTG
+  - FPT
+  - GAS
+  - GVR
+  - HDB
+  - HPG
+  - LPB
+  - MBB
+  - MCH
+  - MSN
+  - MWG
+  - SAB
+  - SHB
+  - SSB
+  - SSI
+  - STB
+  - TCB
+  - TCX
+  - VCB
+  - VHM
+  - VIB
+  - VIC
+  - VJC
+  - VNM
+  - VPB
+  - VPL
+  - VRE
+
+hnx30:
+  - BVS
+  - CAP
+  - CEO
+  - DP3
+  - DTD
+  - DVM
+  - DXP
+  - HUT
+  - IDC
+  - IDV
+  - L14
+  - L18
+  - LAS
+  - LHC
+  - MBS
+  - NDN
+  - NTP
+  - PLC
+  - PSD
+  - PVB
+  - PVC
+  - PVS
+  - SHS
+  - SLS
+  - TMB
+  - TNG
+  - TVD
+  - VC3
+  - VCS
+  - VFS
+
+# Rổ Vingroup — theo dõi song song với VNINDEX trong snapshot thị trường
+# (mục T3 kế hoạch SP1: đo đóng góp/phân kỳ của nhóm Vin so với phần còn
+# lại của thị trường). 4 mã này đã nằm trong vn30 ở trên (VIC, VHM, VRE,
+# VPL) — liệt kê lại ở đây để snapshot generator biết nhóm riêng cần tính.
+vingroup_watch:
+  - VIC
+  - VHM
+  - VRE
+  - VPL
+
+# Watchlist do user tự thêm qua state/state.md (mục 5) — KHÔNG khai báo
+# tĩnh ở đây. Job B đọc watchlist động từ state.md ở runtime (xem T5).
