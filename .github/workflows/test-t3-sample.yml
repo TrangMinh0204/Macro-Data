@@ -1,0 +1,26 @@
+name: TEST T3 Sample (khong dung production)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-t3:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deps
+        run: pip install requests pyyaml
+
+      - name: Tai du lieu that (dung lai T1)
+        run: python scripts/price_collector.py
+
+      - name: Xem thu mau output T3 (KHONG commit)
+        run: python scripts/test_t3_sample.py
