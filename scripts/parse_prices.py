@@ -1,44 +1,300 @@
-name: Price Data (Job B)
+"""
+T2 — Parse & cache CSV (Lop 3).
 
-on:
-  schedule:
-    - cron: "15 11 * * 1-5"
-  workflow_dispatch:
+Doc 4 file da tai o T1 (nam trong _raw/{PRICE_DATE}/{ho_file}/), loc ra
+cac ma can cache (VN30 + HNX30 tu config/tickers.yml, cong watchlist doc
+dong tu state/state.md), ghi moi ma thanh data/prices/{MA}.csv.
 
-permissions:
-  contents: write
+Nguyen tac an toan: ghi ra thu muc _stage_prices/ truoc, chi copy de vao
+data/prices/ SAU KHI qua validator cung. Neu validator fail, data/prices/
+khong bi dung toi -> khong bao gio ghi de cache tot bang du lieu hong.
 
-jobs:
-  fetch-price:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+File index (VNINDEX, HNX-INDEX, ...) luon duoc bat, khong phu thuoc
+watchlist/tickers.yml.
+"""
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
+import csv
+import os
+import re
+import shutil
+import sys
+from collections import defaultdict
+from pathlib import Path
 
-      - name: Install deps
-        run: pip install requests pyyaml
+import yaml
 
-      - name: Tai va chon ngay du lieu
-        run: python scripts/price_collector.py
+RAW_DIR = Path("_raw")
+STAGE_DIR = Path("_stage_prices")
+FINAL_DIR = Path("data/prices")
+TICKERS_CFG = Path("config/tickers.yml")
+STATE_FILE = Path("state/state.md")
+HEALTH_FILE = Path("output/data-health.md")
 
-      - name: Parse va cache CSV
-        run: python scripts/parse_prices.py
+COVERAGE_MIN = 0.90  # nguong hard-fail neu ty le cache thanh cong duoi muc nay
 
-      - name: Commit du lieu gia va data-health
-        if: always()
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/prices output/data-health.md
-          if git diff --cached --quiet; then
-            echo "Khong co thay doi de commit"
-          else
-            git commit -m "Cap nhat gia/data-health ${PRICE_DATE} (Job B)"
-            git push
-          fi
+
+def log(msg: str) -> None:
+    print(msg, flush=True)
+
+
+def read_cache_last_date(ticker: str) -> str | None:
+    """Doc ngay cuoi cung dang co trong cache hien tai (truoc khi ghi de) — de bao cao."""
+    fp = FINAL_DIR / f"{ticker}.csv"
+    if not fp.exists():
+        return None
+    last = None
+    with fp.open("r", encoding="utf-8") as f:
+        reader = csv.reader(f)
+        next(reader, None)
+        for row in reader:
+            if row:
+                last = row[0]
+    return last
+
+
+def write_health_file(status: str, price_date_iso: str, detail: str, cache_vnindex_before: str | None) -> None:
+    HEALTH_FILE.parent.mkdir(parents=True, exist_ok=True)
+    lines = [
+        "# Data Health — Job B (tu dong, khong sua tay)",
+        "",
+        f"- Trang thai lan chay gan nhat: **{status}**",
+        f"- Ngay du lieu muc tieu lan nay: {price_date_iso}",
+        f"- Cache VNINDEX truoc lan chay nay: {cache_vnindex_before or '(chua co)'}",
+        f"- Chi tiet: {detail}",
+        "",
+        "Neu trang thai la PENDING, phien chat tiep theo nen doc file nay va",
+        "hoi nguoi dung truoc khi coi nhu du lieu ngay do da san sang — KHONG",
+        "tu suy doan hay dien so thay cho nguon con thieu.",
+    ]
+    HEALTH_FILE.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def load_universe() -> set[str]:
+    """VN30 + HNX30 (config/tickers.yml) + watchlist (state/state.md muc 5)."""
+    universe: set[str] = set()
+
+    if TICKERS_CFG.exists():
+        cfg = yaml.safe_load(TICKERS_CFG.read_text(encoding="utf-8")) or {}
+        for key in ("vn30", "hnx30"):
+            for t in cfg.get(key, []) or []:
+                universe.add(str(t).strip().upper())
+    else:
+        log(f"  CANH BAO: khong thay {TICKERS_CFG}, chi dung watchlist (neu co).")
+
+    if STATE_FILE.exists():
+        text = STATE_FILE.read_text(encoding="utf-8")
+        m = re.search(r"##\s*5\.\s*Watchlist.*?\n(.*?)(?=\n##\s|\Z)", text, re.S)
+        if m:
+            for line in m.group(1).splitlines():
+                line = line.strip()
+                tok = re.match(r"-\s*([A-Z0-9]{3,5})\b", line)
+                if tok:
+                    universe.add(tok.group(1))
+    else:
+        log(f"  CANH BAO: khong thay {STATE_FILE}, bo qua watchlist.")
+
+    return universe
+
+
+def find_family_files(price_date: str, family: str, prefix_glob: str) -> list[Path]:
+    d = RAW_DIR / price_date / family
+    if not d.exists():
+        return []
+    return sorted(d.glob(prefix_glob))
+
+
+def scan_price_family(files: list[Path], wanted: set[str]) -> dict[str, list[tuple[str, str, str, str, str, str]]]:
+    """
+    Doc tap file (HSX/HNX/UPCOM cua 1 ho: adjusted HOAC raw), gom moi dong
+    thuoc ma trong `wanted` vao dict ticker -> list (date8, open, high, low, close, volume).
+    Mot lan quet toan bo file (moi file ~1-1.5 trieu dong) — set membership O(1).
+    """
+    out: dict[str, list[tuple[str, str, str, str, str, str]]] = defaultdict(list)
+    for fp in files:
+        with fp.open("r", encoding="utf-8-sig", newline="") as f:
+            reader = csv.reader(f)
+            next(reader, None)  # bo header
+            for row in reader:
+                if len(row) < 7:
+                    continue
+                ticker = row[0].strip().upper()
+                if ticker not in wanted:
+                    continue
+                date8, o, h, l, c, v = row[1], row[2], row[3], row[4], row[5], row[6]
+                out[ticker].append((date8, o, h, l, c, v))
+    return out
+
+
+def scan_index_family(files: list[Path]) -> dict[str, list[tuple[str, str, str, str, str, str]]]:
+    """Nhu tren nhung bat MOI ticker chua 'INDEX' trong ten, khong loc theo wanted."""
+    out: dict[str, list[tuple[str, str, str, str, str, str]]] = defaultdict(list)
+    for fp in files:
+        with fp.open("r", encoding="utf-8-sig", newline="") as f:
+            reader = csv.reader(f)
+            next(reader, None)
+            for row in reader:
+                if len(row) < 7:
+                    continue
+                ticker = row[0].strip().upper()
+                if "INDEX" not in ticker:
+                    continue
+                date8, o, h, l, c, v = row[1], row[2], row[3], row[4], row[5], row[6]
+                out[ticker].append((date8, o, h, l, c, v))
+    return out
+
+
+def d8_to_iso(d8: str) -> str:
+    return f"{d8[0:4]}-{d8[4:6]}-{d8[6:8]}" if len(d8) == 8 else d8
+
+
+def write_price_csv(path: Path, adj_rows: list[tuple], raw_close_by_date: dict[str, str]) -> str | None:
+    """Ghi 1 file CSV ma co phieu: date,open,high,low,close,volume,close_raw. Tra ve ngay cuoi (iso) hoac None."""
+    if not adj_rows:
+        return None
+    adj_rows = sorted(adj_rows, key=lambda r: r[0])
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["date", "open", "high", "low", "close", "volume", "close_raw"])
+        for date8, o, h, l, c, v in adj_rows:
+            close_raw = raw_close_by_date.get(date8, "")
+            w.writerow([d8_to_iso(date8), o, h, l, c, v, close_raw])
+    return d8_to_iso(adj_rows[-1][0])
+
+
+def write_index_csv(path: Path, rows: list[tuple]) -> str | None:
+    if not rows:
+        return None
+    rows = sorted(rows, key=lambda r: r[0])
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["date", "open", "high", "low", "close", "volume"])
+        for date8, o, h, l, c, v in rows:
+            w.writerow([d8_to_iso(date8), o, h, l, c, v])
+    return d8_to_iso(rows[-1][0])
+
+
+def safe_filename(ticker: str) -> str:
+    return ticker.replace("-", "")
+
+
+def main() -> int:
+    price_date = os.environ.get("PRICE_DATE")
+    if not price_date:
+        log("LOI: khong co bien PRICE_DATE (buoc T1 chua chay hoac chua ghi env).")
+        return 1
+
+    log(f"=== T2 — Parse & cache gia === ngay du lieu: {price_date}")
+
+    universe = load_universe()
+    log(f"  Tong so ma can cache (VN30+HNX30+watchlist): {len(universe)}")
+
+    adj_files = find_family_files(price_date, "gia_dieu_chinh", "CafeF.*.csv")
+    raw_files = find_family_files(price_date, "gia_chua_dieu_chinh", "CafeF.RAW_*.csv")
+    idx_files = find_family_files(price_date, "index", "CafeF.INDEX.*.csv")
+    log(f"  File gia da dieu chinh: {[f.name for f in adj_files]}")
+    log(f"  File gia chua dieu chinh: {[f.name for f in raw_files]}")
+    log(f"  File index: {[f.name for f in idx_files]}")
+
+    if not adj_files:
+        log("LOI: khong tim thay file gia da dieu chinh — dung lai, khong ghi gi ca.")
+        return 1
+
+    log("  Dang quet file gia da dieu chinh...")
+    adj_data = scan_price_family(adj_files, universe)
+    log(f"    -> tim thay {len(adj_data)}/{len(universe)} ma")
+
+    log("  Dang quet file gia chua dieu chinh...")
+    raw_data = scan_price_family(raw_files, universe)
+
+    log("  Dang quet file index...")
+    idx_data = scan_index_family(idx_files)
+    log(f"    -> tim thay {len(idx_data)} chi so: {sorted(idx_data.keys())}")
+
+    if STAGE_DIR.exists():
+        shutil.rmtree(STAGE_DIR)
+    STAGE_DIR.mkdir(parents=True)
+
+    last_dates: dict[str, str] = {}
+    for ticker, rows in adj_data.items():
+        raw_rows = raw_data.get(ticker, [])
+        raw_close_by_date = {r[0]: r[4] for r in raw_rows}
+        d = write_price_csv(STAGE_DIR / f"{safe_filename(ticker)}.csv", rows, raw_close_by_date)
+        if d:
+            last_dates[ticker] = d
+
+    index_last_dates: dict[str, str] = {}
+    for ticker, rows in idx_data.items():
+        d = write_index_csv(STAGE_DIR / f"{safe_filename(ticker)}.csv", rows)
+        if d:
+            index_last_dates[ticker] = d
+
+    # ---- Validator (hard checks truoc khi copy vao data/prices/) ----
+    log("\n  --- Validator ---")
+    price_date_iso = d8_to_iso(price_date)
+    missing = sorted(universe - set(last_dates.keys()))
+    stale = sorted(t for t, d in last_dates.items() if d != price_date_iso)
+    fresh_count = len(last_dates) - len(stale)
+    coverage = fresh_count / len(universe) if universe else 0.0
+
+    log(f"  Ma khong tim thay (co the sai san/da huy niem yet): {missing[:20]}"
+        + (f" ... (+{len(missing)-20})" if len(missing) > 20 else ""))
+    log(f"  Ma co du lieu nhung KHONG phai phien {price_date_iso} (co the tam ngung GD): {stale}")
+    log(f"  Coverage (ma dung ngay/{len(universe)}): {coverage:.1%}")
+
+    vnindex_date = index_last_dates.get("VNINDEX")
+    log(f"  VNINDEX ngay cuoi: {vnindex_date}")
+
+    # --- Chan doan them: kiem tra bien the ten + so dong thuc te ---
+    variants = sorted(t for t in idx_data.keys() if "VNINDEX" in t.replace("-", "").replace(" ", "").upper())
+    log(f"  [chan doan] Cac ticker chua 'VNINDEX' (sau khi bo dau '-'/space): {variants}")
+    vnindex_rows = idx_data.get("VNINDEX", [])
+    log(f"  [chan doan] So dong tho cua VNINDEX trong file index: {len(vnindex_rows)}")
+    top5 = sorted(vnindex_rows, key=lambda r: r[0], reverse=True)[:5]
+    log(f"  [chan doan] 5 dong moi nhat (date,O,H,L,C,V): {top5}")
+
+    cache_vnindex_before = read_cache_last_date("VNINDEX")
+
+    hard_fail = False
+    reason = ""
+    if not vnindex_date:
+        reason = "Khong tim thay VNINDEX trong file index — nguon co the doi cau truc."
+        log(f"  HARD FAIL: {reason}")
+        hard_fail = True
+    elif vnindex_date != price_date_iso:
+        reason = (
+            f"File index CafeF dang cham hon file gia: VNINDEX moi toi {vnindex_date}, "
+            f"trong khi gia co phieu ({coverage:.0%} coverage) da co toi {price_date_iso}. "
+            "Day la do lech tien do publish cua nguon, KHONG phai loi parse "
+            f"(da kiem tra: {len(vnindex_rows)} dong VNINDEX, khong co ten bien the la)."
+        )
+        log(f"  HARD FAIL: {reason}")
+        hard_fail = True
+    if coverage < COVERAGE_MIN:
+        reason = f"Coverage co phieu {coverage:.1%} duoi nguong {COVERAGE_MIN:.0%} — nghi van loi parse dien rong."
+        log(f"  HARD FAIL: {reason}")
+        hard_fail = True
+
+    if hard_fail:
+        log("\nKET QUA: FAIL ❌ — data/prices/ KHONG bi dung toi, cache cu van con nguyen.")
+        write_health_file("PENDING — cho nguon du lieu / can nguoi dung quyet dinh",
+                           price_date_iso, reason, cache_vnindex_before)
+        return 1
+
+    # ---- Copy staging -> final (chi ghi de file thanh cong lan nay) ----
+    FINAL_DIR.mkdir(parents=True, exist_ok=True)
+    copied = 0
+    for fp in STAGE_DIR.glob("*.csv"):
+        shutil.copy(fp, FINAL_DIR / fp.name)
+        copied += 1
+
+    log(f"\nKET QUA: PASS ✅ — da cache {copied} file (co phieu + chi so) vao {FINAL_DIR}/")
+    log(f"  VNINDEX: {vnindex_date} | Coverage co phieu: {coverage:.1%}")
+    write_health_file("OK — da cache thanh cong", price_date_iso,
+                       f"Coverage {coverage:.1%}, {copied} file.", cache_vnindex_before)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
