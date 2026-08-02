@@ -1,10 +1,10 @@
-name: TEST T3 Sample (khong dung production)
+name: TEST T3+T4 Sample (khong dung production)
 
 on:
   workflow_dispatch:
 
 jobs:
-  test-t3:
+  test-samples:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -24,3 +24,6 @@ jobs:
 
       - name: Xem thu mau output T3 (KHONG commit)
         run: python scripts/test_t3_sample.py
+
+      - name: Xem thu mau output T4 (KHONG commit)
+        run: python scripts/test_t4_sample.py
