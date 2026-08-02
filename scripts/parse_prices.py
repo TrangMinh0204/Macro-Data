@@ -151,19 +151,28 @@ ANOMALY_FILE = Path("output/ohlc-anomalies.md")
 
 
 def detect_ohlc_anomalies(rows: list[tuple]) -> list[tuple[str, str]]:
-    """rows: list (date8,o,h,l,c,v). Tra ve list (date_iso, ly_do) neu O/H/L/C vo ly
-    (Low > High, hoac High/Low khong bao dc Open/Close)."""
+    """rows: list (date8,o,h,l,c,v). Tra ve list (date_iso, ly_do) neu O/H/L/C vo ly.
+
+    Dung sai = max(0.3% gia, 0.02 don vi) — du rong de bo qua nhieu lam tron
+    dau phay dong khi CafeF tinh lai gia dieu chinh qua nhieu lan chia tach/
+    co tuc (thuong chi lech ~0.001-0.005), nhung van bat duoc bat thuong that
+    (lech vai % hoac Low>High dao nguoc hoan toan)."""
     out = []
     for date8, o, h, l, c, v in rows:
         try:
             of, hf, lf, cf = float(o), float(h), float(l), float(c)
         except ValueError:
             continue
-        if lf > hf + 1e-6:
+        if hf <= 0 or lf <= 0 or of <= 0 or cf <= 0:
+            out.append((d8_to_iso(date8), f"Co gia <= 0 (O={of:g} H={hf:g} L={lf:g} C={cf:g})"))
+            continue
+        ref = max(hf, lf, of, cf)
+        tol = max(ref * 0.003, 0.02)
+        if lf > hf + tol:
             out.append((d8_to_iso(date8), f"Low ({lf:g}) > High ({hf:g})"))
-        elif hf < max(of, cf) - 1e-6:
+        elif hf < max(of, cf) - tol:
             out.append((d8_to_iso(date8), f"High ({hf:g}) < max(Open,Close) ({max(of, cf):g})"))
-        elif lf > min(of, cf) + 1e-6:
+        elif lf > min(of, cf) + tol:
             out.append((d8_to_iso(date8), f"Low ({lf:g}) > min(Open,Close) ({min(of, cf):g})"))
     return out
 
