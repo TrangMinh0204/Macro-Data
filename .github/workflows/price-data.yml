@@ -43,12 +43,9 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           mkdir -p data/prices data/packs output
           git add data/prices data/packs
-          if [ -f output/data-health.md ]; then
-            git add output/data-health.md
-          fi
-          if [ -f output/market-snapshot.md ]; then
-            git add output/market-snapshot.md
-          fi
+          for f in output/data-health.md output/market-snapshot.md output/ohlc-anomalies.md; do
+            if [ -f "$f" ]; then git add "$f"; fi
+          done
           if git diff --cached --quiet; then
             echo "Khong co thay doi de commit"
           else
