@@ -147,6 +147,52 @@ def d8_to_iso(d8: str) -> str:
     return f"{d8[0:4]}-{d8[4:6]}-{d8[6:8]}" if len(d8) == 8 else d8
 
 
+ANOMALY_FILE = Path("output/ohlc-anomalies.md")
+
+
+def detect_ohlc_anomalies(rows: list[tuple]) -> list[tuple[str, str]]:
+    """rows: list (date8,o,h,l,c,v). Tra ve list (date_iso, ly_do) neu O/H/L/C vo ly
+    (Low > High, hoac High/Low khong bao dc Open/Close)."""
+    out = []
+    for date8, o, h, l, c, v in rows:
+        try:
+            of, hf, lf, cf = float(o), float(h), float(l), float(c)
+        except ValueError:
+            continue
+        if lf > hf + 1e-6:
+            out.append((d8_to_iso(date8), f"Low ({lf:g}) > High ({hf:g})"))
+        elif hf < max(of, cf) - 1e-6:
+            out.append((d8_to_iso(date8), f"High ({hf:g}) < max(Open,Close) ({max(of, cf):g})"))
+        elif lf > min(of, cf) + 1e-6:
+            out.append((d8_to_iso(date8), f"Low ({lf:g}) > min(Open,Close) ({min(of, cf):g})"))
+    return out
+
+
+def write_anomaly_file(anomalies: dict[str, list[tuple[str, str]]]) -> None:
+    ANOMALY_FILE.parent.mkdir(parents=True, exist_ok=True)
+    if not anomalies:
+        ANOMALY_FILE.write_text(
+            "# OHLC Anomalies (tu dong, khong sua tay)\n\n"
+            "Khong phat hien dong O/H/L/C bat thuong nao trong lan quet gan nhat.\n",
+            encoding="utf-8",
+        )
+        return
+    lines = [
+        "# OHLC Anomalies (tu dong, khong sua tay)",
+        "",
+        "Cac dong du lieu co quan he O/H/L/C bat thuong (vd Low > High) phat hien",
+        "tu nguon CafeF khi parse. Du lieu VAN duoc giu nguyen trong CSV (khong tu",
+        "y sua) — day chi la canh bao de biet ma nao/ngay nao can than trong khi",
+        "phan tich nen/order flow. T4 (Price Pack) doc file nay de chen canh bao",
+        "vao dau pack cua ma tuong ung.",
+        "",
+    ]
+    for ticker in sorted(anomalies):
+        for date_iso, reason in anomalies[ticker]:
+            lines.append(f"- {ticker} {date_iso}: {reason}")
+    ANOMALY_FILE.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
 def write_price_csv(path: Path, adj_rows: list[tuple], raw_close_by_date: dict[str, str]) -> str | None:
     """Ghi 1 file CSV ma co phieu: date,open,high,low,close,volume,close_raw. Tra ve ngay cuoi (iso) hoac None."""
     if not adj_rows:
@@ -211,6 +257,23 @@ def main() -> int:
     log("  Dang quet file index...")
     idx_data = scan_index_family(idx_files)
     log(f"    -> tim thay {len(idx_data)} chi so: {sorted(idx_data.keys())}")
+
+    # --- Phat hien bat thuong O/H/L/C (khong chan pipeline, chi canh bao) ---
+    all_anomalies: dict[str, list[tuple[str, str]]] = {}
+    for ticker, rows in adj_data.items():
+        found = detect_ohlc_anomalies(rows)
+        if found:
+            all_anomalies[ticker] = found
+    for ticker, rows in idx_data.items():
+        found = detect_ohlc_anomalies(rows)
+        if found:
+            all_anomalies.setdefault(ticker, []).extend(found)
+    write_anomaly_file(all_anomalies)
+    if all_anomalies:
+        log(f"  CANH BAO: phat hien bat thuong O/H/L/C o {len(all_anomalies)} ma "
+            f"(chi tiet: {ANOMALY_FILE}): {sorted(all_anomalies.keys())}")
+    else:
+        log("  Khong phat hien bat thuong O/H/L/C nao.")
 
     if STAGE_DIR.exists():
         shutil.rmtree(STAGE_DIR)
