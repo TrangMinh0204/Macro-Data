@@ -1,0 +1,42 @@
+name: Fundamental Pack (T4b)
+
+on:
+  push:
+    paths:
+      - 'data/fundamentals/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fund-pack:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deps
+        run: pip install pandas openpyxl
+
+      - name: Sinh Fundamental Pack
+        run: python scripts/fund_pack.py
+
+      - name: Commit fund pack
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          mkdir -p data/packs
+          git add data/packs
+          if git diff --cached --quiet; then
+            echo "Khong co thay doi de commit"
+          else
+            git commit -m "Cap nhat fundamental pack"
+            git push
+          fi
