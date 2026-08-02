@@ -66,6 +66,19 @@ def main() -> int:
 
     print(f"Da ghi {len(adj_data)} file gia + {len(idx_data)} file chi so vao {TEST_PRICES_DIR}/ (TAM)")
 
+    # Phat hien bat thuong O/H/L/C giong het production (T2), de test ca Phuong an 2
+    test_anomalies: dict[str, list[str]] = {}
+    for ticker, rows in adj_data.items():
+        found = p2.detect_ohlc_anomalies(rows)
+        if found:
+            test_anomalies[ticker] = [f"{d}: {r}" for d, r in found]
+    for ticker, rows in idx_data.items():
+        found = p2.detect_ohlc_anomalies(rows)
+        if found:
+            test_anomalies.setdefault(ticker, []).extend(f"{d}: {r}" for d, r in found)
+    if test_anomalies:
+        print(f"[chan doan] Phat hien bat thuong O/H/L/C o: {sorted(test_anomalies.keys())}")
+
     # Tro T4 vao thu muc test — khong dung PRICES_DIR/PACKS_DIR that
     p4.PRICES_DIR = TEST_PRICES_DIR
     p4.PACKS_DIR = TEST_PACKS_DIR
@@ -76,7 +89,7 @@ def main() -> int:
         if not rows or len(rows) < 10:
             print(f"  [{ticker}] BO QUA — khong du du lieu ({len(rows) if rows else 0} phien)")
             continue
-        content = p4.build_pack(ticker, rows)
+        content = p4.build_pack(ticker, rows, test_anomalies.get(ticker))
         out_fp = TEST_PACKS_DIR / f"{ticker}.md"
         out_fp.write_text(content, encoding="utf-8")
         print("=" * 70)
