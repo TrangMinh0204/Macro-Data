@@ -30,14 +30,15 @@ jobs:
       - name: Parse va cache CSV
         run: python scripts/parse_prices.py
 
-      - name: Commit du lieu gia
+      - name: Commit du lieu gia va data-health
+        if: always()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/prices
+          git add data/prices output/data-health.md
           if git diff --cached --quiet; then
             echo "Khong co thay doi de commit"
           else
-            git commit -m "Cap nhat gia ${PRICE_DATE} (Job B)"
+            git commit -m "Cap nhat gia/data-health ${PRICE_DATE} (Job B)"
             git push
           fi
