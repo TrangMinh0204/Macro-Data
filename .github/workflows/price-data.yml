@@ -35,10 +35,14 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/prices output/data-health.md
+          mkdir -p data/prices output
+          git add data/prices
+          if [ -f output/data-health.md ]; then
+            git add output/data-health.md
+          fi
           if git diff --cached --quiet; then
             echo "Khong co thay doi de commit"
           else
-            git commit -m "Cap nhat gia/data-health ${PRICE_DATE} (Job B)"
+            git commit -m "Cap nhat gia/data-health ${PRICE_DATE}"
             git push
           fi
