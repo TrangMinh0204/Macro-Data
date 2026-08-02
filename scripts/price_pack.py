@@ -20,6 +20,7 @@ if:always() -> tu dong bi skip neu T2 fail).
 
 import csv
 import os
+import re
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -29,6 +30,7 @@ import parse_prices as p2  # noqa: E402  (tai su dung load_universe)
 
 PRICES_DIR = Path("data/prices")
 PACKS_DIR = Path("data/packs")
+ANOMALY_FILE = Path("output/ohlc-anomalies.md")
 
 ZIGZAG_THRESHOLD_PCT = 5.0
 MAX_PIVOTS = 30
@@ -38,6 +40,20 @@ PACK_SIZE_WARN_BYTES = 24_000  # ~6k token
 
 def log(msg: str) -> None:
     print(msg, flush=True)
+
+
+def load_anomalies() -> dict[str, list[str]]:
+    """Doc output/ohlc-anomalies.md (T2 ghi), tra ve {ticker: [mo ta bat thuong]}."""
+    if not ANOMALY_FILE.exists():
+        return {}
+    out: dict[str, list[str]] = {}
+    pattern = re.compile(r"^- (\S+) (\d{4}-\d{2}-\d{2}): (.+)$")
+    for line in ANOMALY_FILE.read_text(encoding="utf-8").splitlines():
+        m = pattern.match(line.strip())
+        if m:
+            ticker, date_iso, reason = m.groups()
+            out.setdefault(ticker, []).append(f"{date_iso}: {reason}")
+    return out
 
 
 # ---------------- doc du lieu ----------------
@@ -263,7 +279,7 @@ def fmt_num(x: float | None, digits: int = 2) -> str:
 
 # ---------------- lap rap pack ----------------
 
-def build_pack(ticker: str, rows: list[dict]) -> str:
+def build_pack(ticker: str, rows: list[dict], ticker_anomalies: list[str] | None = None) -> str:
     daily60 = rows[-60:]
     weekly_all = resample(rows, "W")
     monthly_all = resample(rows, "M")
@@ -316,6 +332,15 @@ def build_pack(ticker: str, rows: list[dict]) -> str:
     L.append("")
     L.append(f"# Price Pack — {ticker}")
     L.append("")
+
+    if ticker_anomalies:
+        L.append("## ⚠️ Canh bao du lieu")
+        L.append("Phat hien dong O/H/L/C bat thuong tu nguon CafeF cho ma nay — "
+                 "KHONG dung cac ngay duoi day cho phan tich nen/order flow "
+                 "(cac chi bao khac trong pack khong bi anh huong dang ke):")
+        for a in ticker_anomalies:
+            L.append(f"- {a}")
+        L.append("")
 
     L.append("## Chi bao tinh san")
     L.append(f"- MA20/50/200: {fmt_num(ma20)} / {fmt_num(ma50)} / {fmt_num(ma200)}")
@@ -395,6 +420,9 @@ def main() -> int:
     log(f"  Tong so ma can sinh pack: {len(universe)}")
 
     PACKS_DIR.mkdir(parents=True, exist_ok=True)
+    anomalies = load_anomalies()
+    if anomalies:
+        log(f"  Doc duoc canh bao O/H/L/C cho {len(anomalies)} ma tu {ANOMALY_FILE}: {sorted(anomalies.keys())}")
 
     ok, skipped, oversized = 0, [], []
     for ticker in sorted(universe):
@@ -402,7 +430,7 @@ def main() -> int:
         if not rows or len(rows) < 10:
             skipped.append(ticker)
             continue
-        content = build_pack(ticker, rows)
+        content = build_pack(ticker, rows, anomalies.get(ticker))
         out_fp = PACKS_DIR / f"{ticker}.md"
         out_fp.write_text(content, encoding="utf-8")
         size = out_fp.stat().st_size
