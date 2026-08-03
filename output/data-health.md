@@ -1,9 +1,9 @@
 # Data Health — Job B (tu dong, khong sua tay)
 
-- Trang thai lan chay gan nhat: **PENDING — cho nguon du lieu / can nguoi dung quyet dinh**
+- Trang thai lan chay gan nhat: **OK — da cache thanh cong (co override thu cong)**
 - Ngay du lieu muc tieu lan nay: 2026-08-03
 - Cache VNINDEX truoc lan chay nay: (chua co)
-- Chi tiet: File index CafeF dang cham hon file gia: VNINDEX moi toi 2026-08-01, trong khi gia co phieu (100% coverage) da co toi 2026-08-03. Day la do lech tien do publish cua nguon, KHONG phai loi parse (da kiem tra: 6330 dong VNINDEX, khong co ten bien the la).
+- Chi tiet: Coverage 100.0%, 62 file. ⚠️ DA DUNG OVERRIDE_INDEX_OK: VNINDEX nhan ngay 2026-08-01 duoc nguoi dung xac nhan thuc chat la phien 2026-08-03 (loi nhan ngay tu CafeF, khong phai uoc tinh).
 
 Neu trang thai la PENDING, phien chat tiep theo nen doc file nay va
 hoi nguoi dung truoc khi coi nhu du lieu ngay do da san sang — KHONG
