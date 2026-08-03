@@ -329,20 +329,35 @@ def main() -> int:
     cache_vnindex_before = read_cache_last_date("VNINDEX")
 
     hard_fail = False
+    override_used = False
     reason = ""
     if not vnindex_date:
         reason = "Khong tim thay VNINDEX trong file index — nguon co the doi cau truc."
         log(f"  HARD FAIL: {reason}")
         hard_fail = True
     elif vnindex_date != price_date_iso:
-        reason = (
-            f"File index CafeF dang cham hon file gia: VNINDEX moi toi {vnindex_date}, "
-            f"trong khi gia co phieu ({coverage:.0%} coverage) da co toi {price_date_iso}. "
-            "Day la do lech tien do publish cua nguon, KHONG phai loi parse "
-            f"(da kiem tra: {len(vnindex_rows)} dong VNINDEX, khong co ten bien the la)."
-        )
-        log(f"  HARD FAIL: {reason}")
-        hard_fail = True
+        override = os.environ.get("OVERRIDE_INDEX_OK", "").strip().lower() == "true"
+        if override:
+            override_used = True
+            reason = (
+                f"GHI DE THU CONG (OVERRIDE_INDEX_OK=true): VNINDEX nhan ngay {vnindex_date} "
+                f"nhung nguoi dung da tu kiem chung day la loi nhan ngay tu CafeF (du lieu "
+                f"O/H/L/C khac han dong truoc do, khong phai ban sao) — thuc chat la phien "
+                f"{price_date_iso}. KHONG tu dong — chi ap dung khi nguoi dung chu dong bat "
+                f"cong tac nay cho dung 1 lan chay."
+            )
+            log(f"  CANH BAO (khong chan): {reason}")
+        else:
+            reason = (
+                f"File index CafeF dang cham hon file gia: VNINDEX moi toi {vnindex_date}, "
+                f"trong khi gia co phieu ({coverage:.0%} coverage) da co toi {price_date_iso}. "
+                "Day la do lech tien do publish cua nguon, KHONG phai loi parse "
+                f"(da kiem tra: {len(vnindex_rows)} dong VNINDEX, khong co ten bien the la). "
+                "Neu da tu kiem chung day la loi nhan ngay o nguon (khong phai thieu du lieu "
+                "that), co the chay lai bang workflow_dispatch voi override_index_ok=true."
+            )
+            log(f"  HARD FAIL: {reason}")
+            hard_fail = True
     if coverage < COVERAGE_MIN:
         reason = f"Coverage co phieu {coverage:.1%} duoi nguong {COVERAGE_MIN:.0%} — nghi van loi parse dien rong."
         log(f"  HARD FAIL: {reason}")
@@ -363,8 +378,13 @@ def main() -> int:
 
     log(f"\nKET QUA: PASS ✅ — da cache {copied} file (co phieu + chi so) vao {FINAL_DIR}/")
     log(f"  VNINDEX: {vnindex_date} | Coverage co phieu: {coverage:.1%}")
-    write_health_file("OK — da cache thanh cong", price_date_iso,
-                       f"Coverage {coverage:.1%}, {copied} file.", cache_vnindex_before)
+    pass_detail = f"Coverage {coverage:.1%}, {copied} file."
+    if override_used:
+        pass_detail += (f" ⚠️ DA DUNG OVERRIDE_INDEX_OK: VNINDEX nhan ngay {vnindex_date} "
+                        f"duoc nguoi dung xac nhan thuc chat la phien {price_date_iso} "
+                        "(loi nhan ngay tu CafeF, khong phai uoc tinh).")
+    write_health_file("OK — da cache thanh cong" + (" (co override thu cong)" if override_used else ""),
+                       price_date_iso, pass_detail, cache_vnindex_before)
     return 0
 
 
