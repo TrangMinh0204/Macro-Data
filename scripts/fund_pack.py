@@ -60,14 +60,6 @@ def log(msg: str) -> None:
     print(msg, flush=True)
 
 
-def detect_file_type(filename: str) -> str | None:
-    name = filename.upper()
-    for t in ("CSTC", "KQKD", "CDKT", "LCTT"):
-        if t in name:
-            return t
-    return None
-
-
 def find_header_row(df: pd.DataFrame) -> int | None:
     for i in range(min(15, len(df))):
         row = df.iloc[i]
@@ -247,34 +239,75 @@ def build_fund_pack(ticker: str, cstc: dict, kqkd: dict, cdkt: dict, export_date
     return "\n".join(L) + "\n"
 
 
+FILENAME_RE = re.compile(
+    r"VietstockFinance_([A-Za-z0-9]{2,6})_Bao-cao-tai-chinh_(CSTC|KQKD|CDKT|LCTT)",
+    re.IGNORECASE,
+)
+
+
+def find_all_source_files(root: Path) -> dict[str, dict[str, Path]]:
+    """Quet TOAN BO file .xlsx duoi root (bat ke nam trong thu muc nao — phang,
+    long theo nganh, hay lac cho) va nhan dien ma + loai file TU CHINH TEN FILE
+    (Vietstock luon dat ten VietstockFinance_{MA}_Bao-cao-tai-chinh_{LOAI}_...).
+
+    Thiet ke nay KHONG phu thuoc cau truc thu muc — day la sua loi thuc te da
+    gap: 1 file lac vao dung thu muc nhom nganh (vd data/fundamentals/nganhang/
+    thay vi nganhang/{MA}/) khien ban truoc day (dua theo TEN THU MUC) hieu
+    nham "nganhang" la mot ma co phieu. Gio moi file duoc doc dung ma cua no
+    bat ke dang nam o dau.
+
+    Neu co nhieu file trung (cung ma + cung loai o nhieu noi — vd con sot file
+    cu chua don), lay file sua doi gan nhat va CANH BAO ro cac file con lai
+    can xoa, khong tu y chon ngau nhien."""
+    found: dict[str, dict[str, list[Path]]] = {}
+    skipped = []
+    for fp in root.rglob("*.xlsx"):
+        m = FILENAME_RE.search(fp.name)
+        if not m:
+            skipped.append(str(fp))
+            continue
+        ticker, ftype = m.group(1).upper(), m.group(2).upper()
+        found.setdefault(ticker, {}).setdefault(ftype, []).append(fp)
+
+    if skipped:
+        log(f"  CANH BAO: {len(skipped)} file .xlsx khong dung dinh dang ten Vietstock, bo qua: {skipped}")
+
+    result: dict[str, dict[str, Path]] = {}
+    for ticker, types in found.items():
+        result[ticker] = {}
+        for ftype, paths in types.items():
+            if len(paths) > 1:
+                paths_sorted = sorted(paths, key=lambda p: p.stat().st_mtime, reverse=True)
+                log(f"  CANH BAO: {ticker}/{ftype} co {len(paths)} file trung nhau — "
+                    f"dung file moi nhat, CAC FILE CON LAI NEN XOA DE TRANH NHAM LAN: "
+                    f"{[str(p) for p in paths_sorted]}")
+                result[ticker][ftype] = paths_sorted[0]
+            else:
+                result[ticker][ftype] = paths[0]
+    return result
+
+
 def main() -> int:
     if not FUND_DIR.exists():
         log("Khong co thu muc data/fundamentals/ — khong co gi de lam.")
         return 0
 
-    tickers = [d for d in FUND_DIR.iterdir() if d.is_dir()]
-    if not tickers:
-        log("data/fundamentals/ dang rong.")
+    by_ticker = find_all_source_files(FUND_DIR)
+    if not by_ticker:
+        log("Khong tim thay file Vietstock hop le nao duoi data/fundamentals/.")
         return 0
 
     PACKS_DIR.mkdir(parents=True, exist_ok=True)
     ok = 0
-    for tdir in sorted(tickers):
-        ticker = tdir.name.upper()
+    for ticker in sorted(by_ticker):
         log(f"\n=== Xu ly {ticker} ===")
-        files = list(tdir.glob("*.xlsx"))
-        by_type: dict[str, Path] = {}
+        by_type = by_ticker[ticker]
         export_dates = []
-        for fp in files:
-            t = detect_file_type(fp.name)
-            if t:
-                by_type[t] = fp
-                m = re.search(r"(\d{8})-(\d{6})", fp.name)
-                if m:
-                    d = m.group(1)
-                    export_dates.append(f"{d[0:4]}-{d[4:6]}-{d[6:8]}")
-            else:
-                log(f"  CANH BAO: khong nhan dien duoc loai file: {fp.name}")
+        for fp in by_type.values():
+            m = re.search(r"(\d{8})-(\d{6})", fp.name)
+            if m:
+                d = m.group(1)
+                export_dates.append(f"{d[0:4]}-{d[4:6]}-{d[6:8]}")
 
         if "CSTC" not in by_type:
             log(f"  BO QUA {ticker}: thieu file CSTC (bat buoc de tinh Graham).")
@@ -294,7 +327,7 @@ def main() -> int:
         log(f"  Da ghi {out_fp} ({out_fp.stat().st_size} bytes)")
         ok += 1
 
-    log(f"\nKET QUA: da sinh {ok}/{len(tickers)} fund pack.")
+    log(f"\nKET QUA: da sinh {ok}/{len(by_ticker)} fund pack.")
     return 0
 
 
