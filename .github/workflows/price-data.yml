@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: "15 11 * * 1-5"
   workflow_dispatch:
+    inputs:
+      override_index_ok:
+        description: "CHI DUNG KHI DA TU KIEM CHUNG: bo qua kiem tra ngay VNINDEX (dung khi xac nhan la loi nhan ngay tu CafeF, khong phai thieu du lieu that). KHONG bat mac dinh."
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -28,6 +33,8 @@ jobs:
         run: python scripts/price_collector.py
 
       - name: Parse va cache CSV
+        env:
+          OVERRIDE_INDEX_OK: ${{ inputs.override_index_ok }}
         run: python scripts/parse_prices.py
 
       - name: Sinh market snapshot
