@@ -55,7 +55,22 @@ jobs:
           done
           if git diff --cached --quiet; then
             echo "Khong co thay doi de commit"
-          else
-            git commit -m "Cap nhat gia/snapshot/pack/data-health ${PRICE_DATE}"
-            git push
+            exit 0
           fi
+          git commit -m "Cap nhat gia/snapshot/pack/data-health ${PRICE_DATE}"
+          for i in 1 2 3 4 5; do
+            if git push; then
+              echo "Push thanh cong (lan $i)"
+              exit 0
+            fi
+            echo "Push bi tu choi (lan $i) — co the do workflow khac vua push truoc. Fetch + rebase roi thu lai..."
+            git fetch origin main
+            if ! git rebase origin/main; then
+              echo "Rebase that bai (xung dot noi dung thuc su) — dung lai, can kiem tra tay."
+              git rebase --abort
+              exit 1
+            fi
+            sleep $((RANDOM % 6 + 2))
+          done
+          echo "Push that bai sau 5 lan thu."
+          exit 1
