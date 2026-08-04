@@ -27,7 +27,11 @@ Job B (price-data.yml) đọc đúng mục này mỗi lần chạy để biết 
 thêm mã nào ngoài VN30 + HNX30.
 
 - (chưa có mã nào)
-
+- VGC
+- BCM
+- HDG
+- VIX
+- HHS
 ---
 
 ## Định dạng STATE_UPDATE
