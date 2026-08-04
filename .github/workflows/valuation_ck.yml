@@ -1,0 +1,34 @@
+# =============================================================
+# CONFIG ĐỊNH GIÁ NGÀNH CHỨNG KHOÁN (P/B hợp lý)
+# Giả định MINH HỌA theo tài liệu "Định giá SSI và công thức
+# chung cho ngành chứng khoán" — chỉnh lại khi có luận điểm mới.
+# Điều kiện bắt buộc: Ke > g cho mọi kịch bản.
+# =============================================================
+
+kich_ban:
+  than_trong:
+    roe: 0.125
+    g: 0.040
+    ke: 0.130
+    trong_so: 0.25
+  co_so:
+    roe: 0.150
+    g: 0.050
+    ke: 0.120
+    trong_so: 0.50
+  lac_quan:
+    roe: 0.165
+    g: 0.055
+    ke: 0.115
+    trong_so: 0.25
+
+# Giả định dùng để đảo công thức tính ROE hàm ý từ P/B thị trường
+implied_roe:
+  g: 0.050
+  ke: 0.120
+
+# Lưới độ nhạy: giá trị/cp theo ROE x Ke (g cố định)
+sensitivity:
+  g: 0.050
+  roe: [0.125, 0.135, 0.145, 0.150, 0.155, 0.165]
+  ke: [0.115, 0.120, 0.125, 0.130]
