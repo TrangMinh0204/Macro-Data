@@ -5,8 +5,8 @@ nguon: gia_dieu_chinh=OK, index=OK
 
 # Market Snapshot — 2026-08-04
 
-**VNINDEX**: 1,762.84 (+1.04%)
-**HNX-INDEX**: 279.28 (+1.54%)
+**VNINDEX**: 1,777.23 (+0.82%)
+**HNX-INDEX**: 286.41 (+2.55%)
 **VN30 (xap xi, TB gian don 30 ma, KHONG phai index chinh thuc vi thieu trong so free-float)**: +0.32%
 
 ## Do rong thi truong (ma tang/giam/dung)
