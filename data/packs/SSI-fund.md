@@ -49,6 +49,19 @@ Q4/2025 | 3,602 | 1,003 | 817
 Q1/2026 | 3,178 | 1,593 | 1,278
 Q2/2026 | 3,319 | 1,529 | 1,231
 
+## Bang can doi ke toan — 10 quy (ty dong)
+Quy | Tong tai san | Tong no phai tra | Von dieu le | Von chu so huu (uoc tinh)
+Q1/2024 | 65,488 | N/A | N/A | N/A
+Q2/2024 | 71,108 | N/A | N/A | N/A
+Q3/2024 | 66,181 | N/A | N/A | N/A
+Q4/2024 | 73,507 | N/A | N/A | N/A
+Q1/2025 | 84,044 | N/A | N/A | N/A
+Q2/2025 | 91,984 | N/A | N/A | N/A
+Q3/2025 | 100,712 | N/A | N/A | N/A
+Q4/2025 | 94,050 | N/A | N/A | N/A
+Q1/2026 | 93,114 | N/A | N/A | N/A
+Q2/2026 | 96,461 | N/A | N/A | N/A
+
 ## Gioi han
 - Du lieu gia (CafeF) o file rieng data/packs/SSI.md; pack nay chi co BCTC/chi so tai chinh.
 - Du lieu chi moi toi quy ghi tren frontmatter — upload lai file Vietstock moi de cap nhat.
