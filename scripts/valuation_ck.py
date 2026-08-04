@@ -3,7 +3,7 @@
 """
 T4f — VALUATION PACK NGÀNH CHỨNG KHOÁN
 =======================================
-Đọc input YAML (data/fundamentals/chungkhoan/**/input_{MÃ}.yml) và
+Đọc input YAML (data/fundamentals/CK/**/input_{MÃ}.yml) và
 config/valuation_ck.yml, tính:
 
   1. Giá tham chiếu suy ra từ bội số (EPS x P/E, BVPS x P/B)
@@ -40,7 +40,7 @@ except ImportError:
     sys.exit("Thiếu PyYAML: pip install pyyaml")
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-INPUT_GLOB = os.path.join(ROOT, "data", "fundamentals", "chungkhoan", "**", "input_*.y*ml")
+INPUT_GLOB = os.path.join(ROOT, "data", "fundamentals", "CK", "**", "input_*.y*ml")
 CONFIG_PATH = os.path.join(ROOT, "config", "valuation_ck.yml")
 OUT_DIR = os.path.join(ROOT, "data", "packs")
 
@@ -391,7 +391,7 @@ def main():
 
     files = sorted(glob.glob(INPUT_GLOB, recursive=True))
     if not files:
-        print("Không tìm thấy file input nào tại data/fundamentals/chungkhoan/**/input_*.yml")
+        print("Không tìm thấy file input nào tại data/fundamentals/CK/**/input_*.yml")
         return
 
     os.makedirs(OUT_DIR, exist_ok=True)
