@@ -1,7 +1,7 @@
 ---
 ma: VNINDEX
 ngay_du_lieu_gan_nhat: 2026-08-01
-so_phien_daily: 6330
+so_phien_daily: 6331
 ---
 
 # Price Pack — VNINDEX
@@ -21,23 +21,23 @@ Phat hien dong O/H/L/C bat thuong tu nguon CafeF cho ma nay — KHONG dung cac n
 - 2005-12-20: Low (313.66) > min(Open,Close) (311.83)
 
 ## Chi bao tinh san
-- MA20/50/200: 1758.01 / 1807.33 / 1772.42
+- MA20/50/200: 1758.01 / 1807.33 / 1772.43
 - RSI14: 39.2
 - Volume/MA20vol: 0.95x
 - 52w High/Low (dieu chinh): 1933.11 / 1482.45
-- OBV: 146277256317 (huong 20 phien: giam)
-- VPT: 3752625 (huong 20 phien: giam)
+- OBV: 145625739517 (huong 20 phien: giam)
+- VPT: 5500972 (huong 20 phien: giam)
 - MFI14: 35.6
 
 ## Cloudbank metrics (Bulkowski Ch.18)
-- 30-week SMA: 1811.63 | Gia hien tai vs SMA: -4.19%
+- 30-week SMA: 1811.47 | Gia hien tai vs SMA: -4.18%
 - ATH (theo lich su co du lieu): 1933.11 | Drawdown tu ATH: -10.21%
 - ATL: 100.00 | Hoi phuc tu ATL: 1635.78%
 
 ## Cup with Handle metrics (proxy)
 - Khoang cach toi 52w high: -10.21%
 - Do sau tu rim (dinh 90 phien gan nhat): -9.97%
-- Uptrend 6 thang truoc (proxy, ~190->90 phien truoc): 13.24%
+- Uptrend 6 thang truoc (proxy, ~190->90 phien truoc): 12.88%
 
 ## Swing points (ZigZag 5%) — 30 pivot gan nhat
 - 2022-11-01 H 1033.75
@@ -172,7 +172,7 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 260207,1824.10,1873.87,1755.49,1866.00,5311.7M
 260213,1769.76,1824.19,1741.37,1824.09,3357.8M
 260227,1833.90,1899.44,1833.90,1880.33,4789.5M
-260306,1876.01,1885.14,1766.86,1767.84,6617.8M
+260308,1876.01,1885.14,1737.26,1762.84,7269.4M
 260313,1757.73,1757.73,1650.49,1696.24,5606.8M
 260320,1701.06,1742.87,1647.16,1647.81,4156.7M
 260327,1629.62,1673.31,1586.44,1672.80,4216.8M
@@ -250,7 +250,7 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 251231,1698.98,1805.93,1629.37,1784.49,16110.0M
 260130,1787.13,1918.46,1775.19,1829.04,20697.8M
 260227,1824.10,1899.44,1741.37,1880.33,13459.0M
-260331,1876.01,1885.14,1586.44,1674.49,22249.2M
+260331,1876.01,1885.14,1586.44,1674.49,22900.7M
 260429,1713.92,1888.99,1665.36,1854.10,15932.4M
 260529,1870.66,1933.11,1840.43,1863.49,15472.4M
 260630,1867.26,1894.75,1775.72,1860.01,12352.2M

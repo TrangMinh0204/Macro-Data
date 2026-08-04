@@ -1,33 +1,31 @@
 ---
 ma: HNXINDEX
 ngay_du_lieu_gan_nhat: 2026-08-01
-so_phien_daily: 5064
+so_phien_daily: 5065
 ---
 
 # Price Pack — HNXINDEX
 
 ## Chi bao tinh san
-- MA20/50/200: 284.58 / 298.44 / 267.25
+- MA20/50/200: 284.58 / 298.44 / 267.27
 - RSI14: 26.6
 - Volume/MA20vol: 0.85x
 - 52w High/Low (dieu chinh): 339.91 / 233.39
-- OBV: 30217269485 (huong 20 phien: giam)
-- VPT: 77747816 (huong 20 phien: giam)
+- OBV: 30271485878 (huong 20 phien: giam)
+- VPT: 71791858 (huong 20 phien: giam)
 - MFI14: 25.9
 
 ## Cloudbank metrics (Bulkowski Ch.18)
-- 30-week SMA: 269.86 | Gia hien tai vs SMA: 0.51%
+- 30-week SMA: 270.72 | Gia hien tai vs SMA: 0.20%
 - ATH (theo lich su co du lieu): 500.09 | Drawdown tu ATH: -45.76%
 - ATL: 15.35 | Hoi phuc tu ATL: 1667.10%
 
 ## Cup with Handle metrics (proxy)
 - Khoang cach toi 52w high: -20.20%
 - Do sau tu rim (dinh 90 phien gan nhat): -19.31%
-- Uptrend 6 thang truoc (proxy, ~190->90 phien truoc): 17.39%
+- Uptrend 6 thang truoc (proxy, ~190->90 phien truoc): 16.83%
 
 ## Swing points (ZigZag 5%) — 30 pivot gan nhat
-- 2023-02-20 H 215.83
-- 2023-03-20 L 201.62
 - 2023-08-16 H 252.56
 - 2023-08-18 L 235.96
 - 2023-09-12 H 256.32
@@ -49,6 +47,8 @@ so_phien_daily: 5064
 - 2026-01-07 H 313.16
 - 2026-01-09 L 247.10
 - 2026-02-07 H 307.00
+- 2026-03-04 L 252.41
+- 2026-03-08 H 279.28
 - 2026-03-09 L 235.36
 - 2026-04-17 H 260.00
 - 2026-05-08 L 246.49
@@ -158,7 +158,7 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 260207,255.93,313.98,255.84,307.00,453.5M
 260213,257.35,258.34,250.95,257.06,235.0M
 260227,257.72,265.33,257.72,262.82,344.0M
-260306,261.70,261.70,252.41,253.64,596.0M
+260308,261.70,279.89,252.41,279.28,650.2M
 260313,250.26,250.26,233.39,245.84,508.0M
 260320,246.13,248.88,241.83,243.46,347.9M
 260327,242.14,252.36,235.75,252.36,373.7M
@@ -236,7 +236,7 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 251231,260.29,264.80,246.43,248.77,1214.0M
 260130,248.91,315.09,244.67,256.13,1710.3M
 260227,255.93,313.98,250.95,262.82,1032.6M
-260331,261.70,261.70,233.39,250.98,1972.9M
+260331,261.70,279.89,233.39,250.98,2027.1M
 260429,252.63,261.80,243.82,250.66,1224.0M
 260529,251.07,294.94,245.40,294.94,1038.8M
 260630,305.11,339.91,283.51,313.16,961.9M
