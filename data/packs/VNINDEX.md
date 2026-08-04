@@ -1,6 +1,6 @@
 ---
 ma: VNINDEX
-ngay_du_lieu_gan_nhat: 2026-08-01
+ngay_du_lieu_gan_nhat: 2026-08-03
 so_phien_daily: 6331
 ---
 
@@ -21,26 +21,25 @@ Phat hien dong O/H/L/C bat thuong tu nguon CafeF cho ma nay — KHONG dung cac n
 - 2005-12-20: Low (313.66) > min(Open,Close) (311.83)
 
 ## Chi bao tinh san
-- MA20/50/200: 1758.01 / 1807.33 / 1772.43
-- RSI14: 39.2
-- Volume/MA20vol: 0.95x
+- MA20/50/200: 1759.36 / 1807.87 / 1772.57
+- RSI14: 43.5
+- Volume/MA20vol: 1.12x
 - 52w High/Low (dieu chinh): 1933.11 / 1482.45
-- OBV: 145625739517 (huong 20 phien: giam)
-- VPT: 5500972 (huong 20 phien: giam)
-- MFI14: 35.6
+- OBV: 146953944917 (huong 20 phien: giam)
+- VPT: 16107845 (huong 20 phien: giam)
+- MFI14: 36.5
 
 ## Cloudbank metrics (Bulkowski Ch.18)
-- 30-week SMA: 1811.47 | Gia hien tai vs SMA: -4.18%
-- ATH (theo lich su co du lieu): 1933.11 | Drawdown tu ATH: -10.21%
-- ATL: 100.00 | Hoi phuc tu ATL: 1635.78%
+- 30-week SMA: 1811.04 | Gia hien tai vs SMA: -2.66%
+- ATH (theo lich su co du lieu): 1933.11 | Drawdown tu ATH: -8.81%
+- ATL: 100.00 | Hoi phuc tu ATL: 1662.84%
 
 ## Cup with Handle metrics (proxy)
-- Khoang cach toi 52w high: -10.21%
-- Do sau tu rim (dinh 90 phien gan nhat): -9.97%
+- Khoang cach toi 52w high: -8.81%
+- Do sau tu rim (dinh 90 phien gan nhat): -8.56%
 - Uptrend 6 thang truoc (proxy, ~190->90 phien truoc): 12.88%
 
 ## Swing points (ZigZag 5%) — 30 pivot gan nhat
-- 2022-11-01 H 1033.75
 - 2022-11-15 L 911.90
 - 2022-12-05 H 1093.67
 - 2022-12-26 L 985.21
@@ -69,15 +68,16 @@ Phat hien dong O/H/L/C bat thuong tu nguon CafeF cho ma nay — KHONG dung cac n
 - 2026-02-27 H 1880.33
 - 2026-03-23 L 1591.17
 - 2026-05-18 H 1927.94
-- 2026-07-22 L 1668.53 (chua xac nhan)
+- 2026-07-22 L 1668.53
+- 2026-08-03 H 1762.84 (chua xac nhan)
 
 ## Ma tran ty le Fibonacci (7 pivot gan nhat)
 Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6/127.2/161.8% de nhan dien harmonic (viec nay thuoc skill, khong phai script).
-- L2/L1 (H2026-02-07 -> L2026-02-10): 101.3%
-- L3/L2 (L2026-02-10 -> H2026-02-27): 112.8%
-- L4/L3 (H2026-02-27 -> L2026-03-23): 228.9%
-- L5/L4 (L2026-03-23 -> H2026-05-18): 116.5%
-- L6/L5 (H2026-05-18 -> L2026-07-22): 77.0%
+- L2/L1 (L2026-02-10 -> H2026-02-27): 112.8%
+- L3/L2 (H2026-02-27 -> L2026-03-23): 228.9%
+- L4/L3 (L2026-03-23 -> H2026-05-18): 116.5%
+- L5/L4 (H2026-05-18 -> L2026-07-22): 77.0%
+- L6/L5 (L2026-07-22 -> H2026-08-03): 36.4%
 
 ## Daily — 60 phien gan nhat (date,O,H,L,C,V)
 260511,1918.93,1927.06,1888.17,1895.50,939.9M
@@ -139,10 +139,9 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 260729,1682.72,1705.31,1675.19,1704.68,516.8M
 260730,1703.94,1745.93,1701.14,1744.66,777.9M
 260731,1703.94,1745.93,1701.14,1744.66,669.8M
-260801,1764.45,1764.45,1730.08,1735.78,606.6M
+260803,1745.06,1767.58,1737.26,1762.84,721.6M
 
 ## Weekly — 52 tuan gan nhat (date,O,H,L,C,V)
-250801,1541.87,1564.92,1482.45,1507.63,9467.8M
 250808,1493.37,1589.58,1491.11,1584.95,9090.3M
 250815,1590.98,1665.97,1585.54,1630.00,9267.9M
 250822,1638.37,1693.68,1614.60,1645.47,9883.7M
@@ -193,7 +192,8 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 260710,1873.24,1873.58,1823.97,1828.00,2885.5M
 260717,1829.50,1829.50,1757.42,1787.45,3020.9M
 260724,1782.93,1783.83,1658.35,1686.11,3808.7M
-260801,1694.78,1764.45,1651.20,1735.78,3865.4M
+260731,1694.78,1745.93,1651.20,1744.66,3258.8M
+260803,1745.06,1767.58,1737.26,1762.84,721.6M
 
 ## Monthly — 60 thang gan nhat (date,O,H,L,C,V)
 210930,1328.54,1365.92,1316.41,1342.06,13921.4M
@@ -255,7 +255,7 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 260529,1870.66,1933.11,1840.43,1863.49,15472.4M
 260630,1867.26,1894.75,1775.72,1860.01,12352.2M
 260731,1859.96,1873.58,1651.20,1744.66,14002.2M
-260801,1764.45,1764.45,1730.08,1735.78,606.6M
+260803,1745.06,1767.58,1737.26,1762.84,721.6M
 
 ## Gioi han
 - Pack nay CHI co du lieu gia (khong co EPS/BVPS/BCTC) — phan dinh gia Graham dung file rieng data/packs/{MA}-fund.md (T4b, doc tu file Excel Vietstock user upload).
