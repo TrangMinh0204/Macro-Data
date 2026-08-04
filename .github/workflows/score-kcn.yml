@@ -1,0 +1,55 @@
+name: Score BDS KCN (T4d)
+
+on:
+  push:
+    paths:
+      - 'data/packs/*.md'
+      - 'data/fundamentals/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  score-kcn:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Tinh diem co hoc dinh gia BDS KCN
+        run: python scripts/score_kcn.py
+
+      - name: Commit ket qua
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          mkdir -p data/packs
+          git add data/packs
+          if git diff --cached --quiet; then
+            echo "Khong co thay doi de commit"
+            exit 0
+          fi
+          git commit -m "Cap nhat diem co hoc dinh gia BDS KCN"
+          for i in 1 2 3 4 5; do
+            if git push; then
+              echo "Push thanh cong (lan $i)"
+              exit 0
+            fi
+            echo "Push bi tu choi (lan $i) — co the do workflow khac vua push truoc. Fetch + rebase roi thu lai..."
+            git fetch origin main
+            if ! git rebase origin/main; then
+              echo "Rebase that bai (xung dot noi dung thuc su) — dung lai, can kiem tra tay."
+              git rebase --abort
+              exit 1
+            fi
+            sleep $((RANDOM % 6 + 2))
+          done
+          echo "Push that bai sau 5 lan thu."
+          exit 1
