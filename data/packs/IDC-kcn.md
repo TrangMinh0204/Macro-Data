@@ -15,6 +15,7 @@ loai: co-hoc-BDS-KCN-L-O-F-V-C-T-G (T4d, tu dong)
 - P/E TTM: 5.57x
 - Earnings Yield: 17.9%
 - P/B (CHUA dieu chinh NCI — xem canh bao): 1.42x
+- Von hoa uoc tinh (trieu CP x gia): 12,523 ty dong
 
 ## T — Ky thuat (trong so 5%, day du)
 - Trend (vi tri so MA20/50/200): 1/3 MA
