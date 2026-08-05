@@ -1,29 +1,29 @@
 ---
 ma: TMB
 loai: money-flow-score (T4e, tu dong)
-ngay_du_lieu: 260804
+ngay_du_lieu: 260805
 ---
 
 # Money Flow Score — TMB
 
-**MoneyFlowScore: -0.58** — Dong tien suy yeu
+**MoneyFlowScore: 0.30** — Trung tinh hoac tich luy
 (chi tinh tren 80% trong so co du lieu — xem ghi chu thanh phan thieu ben duoi)
 **Xac nhan dong tien: 0/6 dieu kien** (CHUA du xac nhan)
 
 ## Cac cau phan Z-score
-- Z(Return): -1.99
-- Z(GTGD): -0.29
-- Z(CMF20): -0.64
+- Z(Return): 0.19
+- Z(GTGD): -0.46
+- Z(CMF20): -1.48
 - Z(RS20 vs VNINDEX): N/A
-- Z(OBV Change 20 phien): 0.69
+- Z(OBV Change 20 phien): 4.24
 
 LUU Y: Z(RS) can data/packs/VNINDEX.md (Price Pack cua VNINDEX) de so sanh — neu N/A, kiem tra file nay co ton tai va du >= 40 phien khong.
 
 ## Gia tri tho quy chieu
-- Dong cua gan nhat (260804): 48.4
-- GTGD phien gan nhat: 48,400
-- CMF20: -0.212
-- RS20 vs VNINDEX: -2.09%
+- Dong cua gan nhat (260805): 48.4
+- GTGD phien gan nhat: 2,904
+- CMF20: -0.361
+- RS20 vs VNINDEX: -1.15%
 
 ## Chi tiet 6 dieu kien xac nhan
 - [ ] Gia > MA20 va MA20 huong len

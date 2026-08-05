@@ -1,29 +1,29 @@
 ---
 ma: CAP
 loai: money-flow-score (T4e, tu dong)
-ngay_du_lieu: 260804
+ngay_du_lieu: 260805
 ---
 
 # Money Flow Score — CAP
 
-**MoneyFlowScore: 0.03** — Trung tinh hoac tich luy
+**MoneyFlowScore: -0.19** — Trung tinh hoac tich luy
 (chi tinh tren 80% trong so co du lieu — xem ghi chu thanh phan thieu ben duoi)
-**Xac nhan dong tien: 2/6 dieu kien** (CHUA du xac nhan)
+**Xac nhan dong tien: 1/6 dieu kien** (CHUA du xac nhan)
 
 ## Cac cau phan Z-score
-- Z(Return): 0.01
-- Z(GTGD): -0.35
-- Z(CMF20): 1.08
+- Z(Return): -0.29
+- Z(GTGD): -0.72
+- Z(CMF20): 0.68
 - Z(RS20 vs VNINDEX): N/A
-- Z(OBV Change 20 phien): -0.78
+- Z(OBV Change 20 phien): -0.74
 
 LUU Y: Z(RS) can data/packs/VNINDEX.md (Price Pack cua VNINDEX) de so sanh — neu N/A, kiem tra file nay co ton tai va du >= 40 phien khong.
 
 ## Gia tri tho quy chieu
-- Dong cua gan nhat (260804): 43.5
-- GTGD phien gan nhat: 739,500
-- CMF20: 0.392
-- RS20 vs VNINDEX: -4.57%
+- Dong cua gan nhat (260805): 43.1
+- GTGD phien gan nhat: 387,900
+- CMF20: 0.363
+- RS20 vs VNINDEX: -5.10%
 
 ## Chi tiet 6 dieu kien xac nhan
 - [ ] Gia > MA20 va MA20 huong len
@@ -31,6 +31,6 @@ LUU Y: Z(RS) can data/packs/VNINDEX.md (Price Pack cua VNINDEX) de so sanh — n
 - [x] CMF20 > 0
 - [ ] OBV > MA20(OBV)
 - [ ] RS20 > 0
-- [x] Dong cua trong 30% tren bien do phien
+- [ ] Dong cua trong 30% tren bien do phien
 
 Day la chi so dinh luong tu dong, KHONG phai khuyen nghi mua ban. Doi chieu voi phan tich dinh tinh (tin tuc, KQKD, nhom nganh dong pha) truoc khi hanh dong.

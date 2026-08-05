@@ -1,36 +1,36 @@
 ---
 ma: DP3
 loai: money-flow-score (T4e, tu dong)
-ngay_du_lieu: 260804
+ngay_du_lieu: 260805
 ---
 
 # Money Flow Score — DP3
 
-**MoneyFlowScore: -0.77** — Dong tien suy yeu
+**MoneyFlowScore: -0.71** — Dong tien suy yeu
 (chi tinh tren 80% trong so co du lieu — xem ghi chu thanh phan thieu ben duoi)
 **Xac nhan dong tien: 1/6 dieu kien** (CHUA du xac nhan)
 
 ## Cac cau phan Z-score
-- Z(Return): -1.84
-- Z(GTGD): 2.85
-- Z(CMF20): -3.07
+- Z(Return): 0.45
+- Z(GTGD): -0.64
+- Z(CMF20): -2.31
 - Z(RS20 vs VNINDEX): N/A
-- Z(OBV Change 20 phien): -1.78
+- Z(OBV Change 20 phien): -1.57
 
 LUU Y: Z(RS) can data/packs/VNINDEX.md (Price Pack cua VNINDEX) de so sanh — neu N/A, kiem tra file nay co ton tai va du >= 40 phien khong.
 
 ## Gia tri tho quy chieu
-- Dong cua gan nhat (260804): 59.7
-- GTGD phien gan nhat: 1,014,900
-- CMF20: -0.176
-- RS20 vs VNINDEX: -2.24%
+- Dong cua gan nhat (260805): 59.8
+- GTGD phien gan nhat: 239,200
+- CMF20: -0.150
+- RS20 vs VNINDEX: -2.18%
 
 ## Chi tiet 6 dieu kien xac nhan
 - [ ] Gia > MA20 va MA20 huong len
-- [x] KL > 1.2x MA20(KL)
+- [ ] KL > 1.2x MA20(KL)
 - [ ] CMF20 > 0
 - [ ] OBV > MA20(OBV)
 - [ ] RS20 > 0
-- [ ] Dong cua trong 30% tren bien do phien
+- [x] Dong cua trong 30% tren bien do phien
 
 Day la chi so dinh luong tu dong, KHONG phai khuyen nghi mua ban. Doi chieu voi phan tich dinh tinh (tin tuc, KQKD, nhom nganh dong pha) truoc khi hanh dong.

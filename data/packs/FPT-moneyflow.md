@@ -1,29 +1,29 @@
 ---
 ma: FPT
 loai: money-flow-score (T4e, tu dong)
-ngay_du_lieu: 260804
+ngay_du_lieu: 260805
 ---
 
 # Money Flow Score — FPT
 
-**MoneyFlowScore: 0.52** — Dong tien vao cai thien
+**MoneyFlowScore: 0.20** — Trung tinh hoac tich luy
 (chi tinh tren 80% trong so co du lieu — xem ghi chu thanh phan thieu ben duoi)
 **Xac nhan dong tien: 2/6 dieu kien** (CHUA du xac nhan)
 
 ## Cac cau phan Z-score
-- Z(Return): -0.09
-- Z(GTGD): -0.23
-- Z(CMF20): 1.96
+- Z(Return): -0.62
+- Z(GTGD): -0.21
+- Z(CMF20): 1.06
 - Z(RS20 vs VNINDEX): N/A
-- Z(OBV Change 20 phien): 1.27
+- Z(OBV Change 20 phien): 1.20
 
 LUU Y: Z(RS) can data/packs/VNINDEX.md (Price Pack cua VNINDEX) de so sanh — neu N/A, kiem tra file nay co ton tai va du >= 40 phien khong.
 
 ## Gia tri tho quy chieu
-- Dong cua gan nhat (260804): 71.5
-- GTGD phien gan nhat: 471,900,000
-- CMF20: -0.197
-- RS20 vs VNINDEX: 1.57%
+- Dong cua gan nhat (260805): 70.3
+- GTGD phien gan nhat: 485,070,000
+- CMF20: -0.233
+- RS20 vs VNINDEX: 1.76%
 
 ## Chi tiet 6 dieu kien xac nhan
 - [ ] Gia > MA20 va MA20 huong len
