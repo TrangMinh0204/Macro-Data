@@ -23,7 +23,7 @@ LUU Y: Z(RS) can data/packs/VNINDEX.md (Price Pack cua VNINDEX) de so sanh — n
 - Dong cua gan nhat (260804): 38.3
 - GTGD phien gan nhat: 14,975,300
 - CMF20: 0.227
-- RS20 vs VNINDEX: -0.96%
+- RS20 vs VNINDEX: -1.54%
 
 ## Chi tiet 6 dieu kien xac nhan
 - [ ] Gia > MA20 va MA20 huong len
