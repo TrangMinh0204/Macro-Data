@@ -32,3 +32,20 @@ sensitivity:
   g: 0.050
   roe: [0.125, 0.135, 0.145, 0.150, 0.155, 0.165]
   ke: [0.115, 0.120, 0.125, 0.130]
+
+# Du bao rieng cho tung ma (RI/DDM) — CHI dinh gia bang Residual
+# Income/DDM khi co muc tuong ung o day. De trong (khong khai bao ma)
+# thi bao cao ghi ro "chua co du bao", khong tu bia so.
+# Vi du (bo comment va dien so that khi co luan diem):
+# du_bao:
+#   SSI:
+#     residual_income:
+#       roe_path: [0.14, 0.145, 0.15, 0.155, 0.16]
+#       payout_path: [0.2, 0.2, 0.3, 0.3, 0.4]
+#       ke: 0.12
+#       g_terminal: 0.05
+#     ddm:
+#       dps_path: [800, 900, 1000]
+#       ke: 0.12
+#       g_terminal: 0.05
+du_bao: {}
