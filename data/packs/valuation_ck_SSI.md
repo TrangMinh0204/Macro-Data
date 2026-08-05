@@ -1,6 +1,6 @@
 # VALUATION PACK — SSI (Ngành chứng khoán)
 
-- Kỳ báo cáo: **Q2/2026** | Sinh lúc: 05/08/2026 22:18
+- Kỳ báo cáo: **Q2/2026** | Sinh lúc: 05/08/2026 22:25
 - Nguồn dữ liệu: file Vietstock gốc (CSTC/KQKD/CDKT) dưới `data/fundamentals/CK/SSI/`, đọc qua `fund_pack.py` — không cần input thủ công.
 - Phương pháp chính: **P/B hợp lý** `(ROE − g)/(Ke − g)`; kiểm tra chéo P/E hợp lý, ROE hàm ý; RI/DDM khi config có dự báo.
 - Lưu ý: đây là phân tích, không phải khuyến nghị mua/bán.
@@ -70,8 +70,17 @@ Công thức: `P/B* = (ROE − g)/(Ke − g)` ; `Giá trị/cp = BVPS × P/B*` ;
 
 ## 7. Residual Income & DDM
 
+**Lịch chia cổ tức đã công bố (tham khảo — không tự động đưa vào DDM):**
+
+| Năm | Loại | Giá trị | Ngày chốt | Ngày thanh toán | Ghi chú |
+|---|---|---|---|---|---|
+| 2025 | tien_mat | 1.000 đ/cp | 2026-08-17 | 2026-09-14 | Đợt 1/2025 — ngày chốt là GD KHQ theo Vietstock |
+| 2026 | co_phieu | 5:1 | 2026-08-17 | 2026-11-18 | Cổ tức năm 2026 bằng cổ phiếu — ngày chốt là GD KHQ theo Vietstock |
+
+*Nguồn: config/dividends.yml, mục `co_tuc.SSI` — do người dùng tự ghi lại từ nghị quyết/thông báo.*
+
 - Residual Income: **chưa có dự báo**. Thêm mục `du_bao.SSI.residual_income` trong config/valuation_ck.yml để kích hoạt.
-- DDM: **chưa có kế hoạch cổ tức dự kiến**. Thêm mục `du_bao.SSI.ddm` để kích hoạt.
+- DDM: **chưa có kế hoạch cổ tức dự kiến**. Thêm mục `du_bao.SSI.ddm` để kích hoạt (tham khảo lịch sử ở bảng trên).
 
 ---
 *Phương pháp KHÔNG dùng làm chính cho CTCK: EV/EBITDA, FCFF truyền thống, P/S.*
