@@ -1,0 +1,63 @@
+# =============================================================
+# LỊCH CHIA CỔ TỨC — NGÀNH CHỨNG KHOÁN (CTCK)
+# =============================================================
+# File này CHỈ chứa cổ tức của các mã ngành chứng khoán (SSI, HCM,
+# VCI, VIX...) — khớp với data/fundamentals/CK/{MÃ}/ và được
+# scripts/valuation_ck.py đọc.
+#
+# Các ngành khác dùng file riêng, cùng thư mục config/:
+#   - config/dividends_nganhang.yml — ngân hàng
+#   - config/dividends_kcn.yml      — BĐS khu công nghiệp
+#
+# Mục đích: ghi lại cổ tức ĐÃ CÔNG BỐ hoặc ĐÃ TRẢ (sự thật, không
+# phải dự báo) để có cơ sở tham khảo khi điền dự báo DDM trong
+# config/valuation_ck.yml (mục du_bao.{MÃ}.ddm.dps_path).
+#
+# File này CHỈ hiển thị thành bảng tham khảo trong báo cáo — KHÔNG
+# tự động đẩy vào công thức DDM. Muốn DDM chạy, vẫn cần điền rõ
+# du_bao.{MÃ}.ddm trong config/valuation_ck.yml (đó là chỗ bạn nêu
+# GIẢ ĐỊNH/dự báo — khác với file này chỉ ghi SỰ THẬT đã xảy ra).
+#
+# Cách điền — mỗi mã một danh sách, mỗi dòng là 1 đợt chia:
+#   nam: năm tài chính hoặc năm công bố
+#   loai: tien_mat | co_phieu
+#   dong_cp: số đồng/cổ phiếu (chỉ điền khi loai = tien_mat)
+#   ty_le: tỷ lệ phát hành, ví dụ "15%" (chỉ điền khi loai = co_phieu)
+#   ngay_chot: ngày chốt quyền (YYYY-MM-DD), điền được thì điền
+#   ngay_thanh_toan: ngày thanh toán/phát hành (YYYY-MM-DD)
+#   ghi_chu: ghi chú tự do (nghị quyết, đợt mấy...)
+#
+# Không cần điền đủ mọi trường — trường nào không có thì bỏ qua.
+#
+# Ví dụ (bỏ comment và sửa số thật khi có):
+# co_tuc:
+#   SSI:
+#     - nam: 2025
+#       loai: tien_mat
+#       dong_cp: 500
+#       ngay_chot: 2025-06-15
+#       ngay_thanh_toan: 2025-07-20
+#       ghi_chu: "Đợt 1/2025 theo NQ ĐHCĐ"
+#     - nam: 2025
+#       loai: co_phieu
+#       ty_le: "10%"
+#       ngay_chot: 2025-11-01
+#   VCI:
+#     - nam: 2024
+#       loai: tien_mat
+#       dong_cp: 300
+
+co_tuc:
+  SSI:
+    - nam: 2025
+      loai: tien_mat
+      dong_cp: 1000
+      ngay_chot: 2026-08-17
+      ngay_thanh_toan: 2026-09-14
+      ghi_chu: "Đợt 1/2025 — ngày chốt là GD KHQ theo Vietstock"
+    - nam: 2026
+      loai: co_phieu
+      ty_le: "5:1"
+      ngay_chot: 2026-08-17
+      ngay_thanh_toan: 2026-11-18
+      ghi_chu: "Cổ tức năm 2026 bằng cổ phiếu — ngày chốt là GD KHQ theo Vietstock"
