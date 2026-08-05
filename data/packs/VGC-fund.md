@@ -62,6 +62,20 @@ Q2/2026 | 3,173.21 | 26,186.00 | 14.18 | 1.72 | 5.00 | 0.80 | 4.72 | 2.06
 - EPS CAGR (Q1/2016 -> Q2/2026, ~10.2 nam): 16.8%
 - PEG = P/E / CAGR%: 0.84
 
+## Chi so nganh Chung khoan (CTCK) — Q2/2026
+LUU Y: HTM tong = HTM ngan han + HTM dai han (2 dong rieng trong CDKT).
+
+**Cau truc tai chinh (ty dong):**
+- Tong tai san: 27,670 (100.0% tai san)
+- FVTPL: N/A
+- Cac khoan cho vay: N/A
+- HTM (ngan + dai han): N/A
+- Tien va tuong duong: 2,099 (7.6% tai san)
+- Tong no phai tra: 15,929 (57.6% tai san)
+- Vay va no thue TC ngan han: 2,908 (10.5% tai san)
+- Von chu so huu: N/A
+- LNST chua phan phoi: 1,110 (4.0% tai san)
+
 ## Ket qua kinh doanh — 8 quy gan nhat (ty dong)
 Quy | Doanh_thu | LNTT | LNST
 Q3/2024 | 2,834 | 334 | 205
@@ -75,16 +89,16 @@ Q2/2026 | 4,462 | 1,036 | 563
 
 ## Bang can doi ke toan — 10 quy (ty dong)
 Quy | Tong tai san | Tong no phai tra | Von dieu le | Von chu so huu (uoc tinh)
-Q1/2024 | 23,318 | N/A | N/A | N/A
-Q2/2024 | 23,641 | N/A | N/A | N/A
-Q3/2024 | 24,231 | N/A | N/A | N/A
-Q4/2024 | 24,842 | N/A | N/A | N/A
-Q1/2025 | 23,963 | N/A | N/A | N/A
-Q2/2025 | 25,502 | N/A | N/A | N/A
-Q3/2025 | 25,624 | N/A | N/A | N/A
-Q4/2025 | 26,441 | N/A | N/A | N/A
-Q1/2026 | 26,868 | N/A | N/A | N/A
-Q2/2026 | 27,670 | N/A | N/A | N/A
+Q1/2024 | 23,318 | 13,563 | N/A | 9,755
+Q2/2024 | 23,641 | 13,898 | N/A | 9,743
+Q3/2024 | 24,231 | 14,278 | N/A | 9,953
+Q4/2024 | 24,842 | 14,887 | N/A | 9,955
+Q1/2025 | 23,963 | 13,713 | N/A | 10,250
+Q2/2025 | 25,502 | 14,627 | N/A | 10,875
+Q3/2025 | 25,624 | 14,751 | N/A | 10,873
+Q4/2025 | 26,441 | 14,870 | N/A | 11,571
+Q1/2026 | 26,868 | 14,790 | N/A | 12,078
+Q2/2026 | 27,670 | 15,929 | N/A | 11,741
 
 ## Gioi han
 - Du lieu gia (CafeF) o file rieng data/packs/VGC.md; pack nay chi co BCTC/chi so tai chinh.

@@ -62,29 +62,54 @@ Q2/2026 | 1,358.17 | 13,555.91 | 20.03 | 2.01 | 1.00 | 1.11 | 1.88 | 0.67
 - EPS CAGR (Q1/2016 -> Q2/2026, ~10.2 nam): -2.8%
 - PEG: khong ap dung (CAGR <= 0)
 
+## Chi so nganh Chung khoan (CTCK) — Q2/2026
+LUU Y: HTM tong = HTM ngan han + HTM dai han (2 dong rieng trong CDKT).
+
+**Cau truc tai chinh (ty dong):**
+- Tong tai san: 41,259 (100.0% tai san)
+- FVTPL: 9,133 (22.1% tai san)
+- Cac khoan cho vay: 29,024 (70.3% tai san)
+- HTM (ngan + dai han): 382 (0.9% tai san)
+- Tien va tuong duong: 2,202 (5.3% tai san)
+- Tong no phai tra: 26,619 (64.5% tai san)
+- Vay va no thue TC ngan han: 26,093 (63.2% tai san)
+- Von chu so huu: 14,640 (35.5% tai san)
+- LNST chua phan phoi: 2,599 (6.3% tai san)
+- FVTPL + Cho vay / Tong tai san: 92.5%
+- Don bay No/VCSH: 181.82%
+
+**Ket qua kinh doanh quy Q2/2026 (ty dong):**
+- Tong doanh thu hoat dong: 1,235
+- Lai FVTPL: 244
+- Lai cho vay va phai thu: 766
+- Doanh thu moi gioi: 197
+- Chi phi moi gioi: 170
+- Chi phi lai vay: N/A
+- Loi nhuan gop moi gioi = 197 - 170 = 27 (bien 13.7%)
+
 ## Ket qua kinh doanh — 8 quy gan nhat (ty dong)
-Quy | Doanh_thu | LNTT | LNST
-Q3/2024 | 1,138 | 275 | 222
-Q4/2024 | 1,182 | 285 | 227
-Q1/2025 | 1,000 | 283 | 227
-Q2/2025 | 1,073 | 240 | 192
-Q3/2025 | 1,665 | 550 | 441
-Q4/2025 | 1,398 | 401 | 319
-Q1/2026 | 1,466 | 363 | 291
-Q2/2026 | 1,235 | 340 | 273
+Quy | Doanh_thu | LNTT | LNST | Tong_DT_hoat_dong_ck | Lai_FVTPL_ck | Lai_HTM_ck | Lai_cho_vay_ck | DT_moi_gioi_ck | CP_moi_gioi_ck
+Q3/2024 | 1,138 | 275 | 222 | 1,138 | 459 | N/A | 478 | 193 | 151
+Q4/2024 | 1,182 | 285 | 227 | 1,182 | 473 | N/A | 510 | 187 | 145
+Q1/2025 | 1,000 | 283 | 227 | 1,000 | 249 | N/A | 523 | 164 | 135
+Q2/2025 | 1,073 | 240 | 192 | 1,073 | 335 | N/A | 499 | 233 | 170
+Q3/2025 | 1,665 | 550 | 441 | 1,665 | 502 | N/A | 642 | 507 | 264
+Q4/2025 | 1,398 | 401 | 319 | 1,398 | 347 | N/A | 732 | 285 | 213
+Q1/2026 | 1,466 | 363 | 291 | 1,466 | 359 | N/A | 765 | 324 | 232
+Q2/2026 | 1,235 | 340 | 273 | 1,235 | 244 | 9 | 766 | 197 | 170
 
 ## Bang can doi ke toan — 10 quy (ty dong)
 Quy | Tong tai san | Tong no phai tra | Von dieu le | Von chu so huu (uoc tinh)
-Q1/2024 | 20,409 | N/A | N/A | N/A
-Q2/2024 | 27,756 | N/A | N/A | N/A
-Q3/2024 | 32,715 | N/A | N/A | N/A
-Q4/2024 | 31,340 | N/A | N/A | N/A
-Q1/2025 | 30,462 | N/A | N/A | N/A
-Q2/2025 | 34,937 | N/A | N/A | N/A
-Q3/2025 | 44,762 | N/A | N/A | N/A
-Q4/2025 | 46,499 | N/A | N/A | N/A
-Q1/2026 | 40,467 | N/A | N/A | N/A
-Q2/2026 | 41,259 | N/A | N/A | N/A
+Q1/2024 | 20,409 | 11,820 | N/A | 8,589
+Q2/2024 | 27,756 | 17,093 | N/A | 10,663
+Q3/2024 | 32,715 | 22,658 | N/A | 10,057
+Q4/2024 | 31,340 | 20,896 | N/A | 10,444
+Q1/2025 | 30,462 | 20,151 | N/A | 10,311
+Q2/2025 | 34,937 | 24,753 | N/A | 10,184
+Q3/2025 | 44,762 | 34,138 | N/A | 10,624
+Q4/2025 | 46,499 | 31,956 | N/A | 14,543
+Q1/2026 | 40,467 | 26,065 | N/A | 14,402
+Q2/2026 | 41,259 | 26,619 | N/A | 14,640
 
 ## Gioi han
 - Du lieu gia (CafeF) o file rieng data/packs/HCM.md; pack nay chi co BCTC/chi so tai chinh.
