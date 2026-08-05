@@ -44,6 +44,7 @@ import fund_pack as fp
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONFIG_PATH = os.path.join(ROOT, "config", "valuation_ck.yml")
+DIVIDENDS_PATH = os.path.join(ROOT, "config", "dividends_ck.yml")
 OUT_DIR = os.path.join(ROOT, "data", "packs")
 
 TEN_KICH_BAN = {"than_trong": "Thận trọng", "co_so": "Cơ sở", "lac_quan": "Lạc quan"}
@@ -137,7 +138,7 @@ def ddm_value(dps_path, ke, g_term):
 
 
 # ----------------------------------------------------------------- #
-def build_report(ticker, cstc, cdkt, kqkd, cfg):
+def build_report(ticker, cstc, cdkt, kqkd, cfg, dividends=None):
     thieu = []
 
     all_q_cstc = fp.sort_quarters(cstc.get("EPS_TTM", {}).keys()) if cstc.get("EPS_TTM") else []
@@ -338,6 +339,27 @@ def build_report(ticker, cstc, cdkt, kqkd, cfg):
 
     A("## 7. Residual Income & DDM")
     A("")
+
+    dividend_rows = (dividends or {}).get(ticker) or []
+    if dividend_rows:
+        A("**Lịch chia cổ tức đã công bố (tham khảo — không tự động đưa vào DDM):**")
+        A("")
+        A("| Năm | Loại | Giá trị | Ngày chốt | Ngày thanh toán | Ghi chú |")
+        A("|---|---|---|---|---|---|")
+        for d in dividend_rows:
+            loai = d.get("loai", "—")
+            if loai == "tien_mat":
+                gia_tri = f"{vnd(d.get('dong_cp'))} đ/cp" if d.get("dong_cp") is not None else "—"
+            elif loai == "co_phieu":
+                gia_tri = d.get("ty_le", "—")
+            else:
+                gia_tri = "—"
+            A(f"| {d.get('nam', '—')} | {loai} | {gia_tri} | {d.get('ngay_chot', '—')} | "
+              f"{d.get('ngay_thanh_toan', '—')} | {d.get('ghi_chu', '')} |")
+        A("")
+        A(f"*Nguồn: config/dividends.yml, mục `co_tuc.{ticker}` — do người dùng tự ghi lại từ nghị quyết/thông báo.*")
+        A("")
+
     if ri_cfg:
         v0, rows = residual_income_value(bvps, ri_cfg["roe_path"], ri_cfg["payout_path"],
                                          ri_cfg["ke"], ri_cfg["g_terminal"])
@@ -356,7 +378,8 @@ def build_report(ticker, cstc, cdkt, kqkd, cfg):
         p0 = ddm_value(ddm_cfg["dps_path"], ddm_cfg["ke"], ddm_cfg["g_terminal"])
         A(f"- **DDM: P0 = {vnd(p0)} đồng/cp**")
     else:
-        A(f"- DDM: **chưa có kế hoạch cổ tức dự kiến**. Thêm mục `du_bao.{ticker}.ddm` để kích hoạt.")
+        A(f"- DDM: **chưa có kế hoạch cổ tức dự kiến**. Thêm mục `du_bao.{ticker}.ddm` để kích hoạt"
+          + (f" (tham khảo lịch sử ở bảng trên)." if dividend_rows else "."))
     A("")
 
     if thieu:
@@ -382,6 +405,15 @@ def main():
         if kb["ke"] <= kb["g"]:
             sys.exit(f"Config lỗi: kịch bản '{key}' có Ke <= g.")
 
+    # config/dividends.yml la file rieng, TUY CHON — khong bat buoc phai
+    # ton tai. Neu chua tao hoac chua co muc "co_tuc" thi coi nhu rong,
+    # khong lam gian doan cac ma khac.
+    dividends = {}
+    if os.path.exists(DIVIDENDS_PATH):
+        with open(DIVIDENDS_PATH, encoding="utf-8") as f:
+            div_cfg = yaml.safe_load(f) or {}
+        dividends = div_cfg.get("co_tuc") or {}
+
     os.makedirs(OUT_DIR, exist_ok=True)
 
     by_ticker = fp.find_all_source_files(fp.FUND_DIR)
@@ -405,7 +437,7 @@ def main():
             print(f"BỎ QUA {ticker}: không phải hồ sơ ngành chứng khoán (thiếu chỉ tiêu _ck).")
             continue
 
-        report, err = build_report(ticker, cstc, cdkt, kqkd, cfg)
+        report, err = build_report(ticker, cstc, cdkt, kqkd, cfg, dividends)
         if err:
             print(f"BỎ QUA {ticker}: {err}")
             continue
@@ -417,6 +449,7 @@ def main():
         ok += 1
 
     print(f"\nKẾT QUẢ: đã định giá {ok}/{len(by_ticker)} mã.")
+
 
 
 if __name__ == "__main__":
