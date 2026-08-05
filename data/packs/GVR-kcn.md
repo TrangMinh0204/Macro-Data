@@ -6,7 +6,7 @@ loai: co-hoc-BDS-KCN-L-O-F-V-C-T-G (T4d, tu dong)
 # Diem co hoc dinh gia BDS KCN — GVR
 
 **KHONG co S_raw tong hop** — thieu 55% trong so (L 25% + O 20% + C 10%), khong the cong gop mot cach co y nghia. Duoi day la cac cau phan da tinh duoc rieng le.
-**Gia dung de tinh:** 28,500 dong
+**Gia dung de tinh:** 28,150 dong
 
 ## F — Chat luong tai chinh (trong so 15%, mot phan)
 (khong tinh duoc — xem ghi chu ben duoi)
@@ -16,11 +16,11 @@ loai: co-hoc-BDS-KCN-L-O-F-V-C-T-G (T4d, tu dong)
 
 ## T — Ky thuat (trong so 5%, day du)
 - Trend (vi tri so MA20/50/200): 0/3 MA
-- RSI14: 38.6
+- RSI14: 35.4
 - MFI14: 39.1
-- Volume/MA20: 0.97x
+- Volume/MA20: 0.9x
 - Huong OBV/VPT (20 phien): giam / giam
-- RiskReward (tu swing points): 1.00 (khang cu 29.1, ho tro 27.9)
+- RiskReward (tu swing points): 1.40 (khang cu 28.5, ho tro 27.9)
 
 ## G — Quan tri (trong so 5%, mot phan)
 (khong tinh duoc — xem ghi chu ben duoi)

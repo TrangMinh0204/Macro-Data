@@ -1,28 +1,26 @@
 ---
-ma: BCM
+ma: KBC
 loai: co-hoc-BDS-KCN-L-O-F-V-C-T-G (T4d, tu dong)
 ---
 
-# Diem co hoc dinh gia BDS KCN — BCM
+# Diem co hoc dinh gia BDS KCN — KBC
 
 **KHONG co S_raw tong hop** — thieu 55% trong so (L 25% + O 20% + C 10%), khong the cong gop mot cach co y nghia. Duoi day la cac cau phan da tinh duoc rieng le.
-**Gia dung de tinh:** 36,600 dong
+**Gia dung de tinh:** 28,250 dong
 
 ## F — Chat luong tai chinh (trong so 15%, mot phan)
 (khong tinh duoc — xem ghi chu ben duoi)
 
 ## V — Dinh gia (trong so 20%, mot phan — CHUA co P/RNAV)
-- P/E TTM: 17.72x
-- Earnings Yield: 5.6%
-- P/B (CHUA dieu chinh NCI — xem canh bao): 1.69x
+(khong tinh duoc — xem ghi chu ben duoi)
 
 ## T — Ky thuat (trong so 5%, day du)
-- Trend (vi tri so MA20/50/200): 0/3 MA
-- RSI14: 24.3
-- MFI14: 30.8
-- Volume/MA20: 1.16x
+- Trend (vi tri so MA20/50/200): 1/3 MA
+- RSI14: 48.2
+- MFI14: 47.6
+- Volume/MA20: 0.94x
 - Huong OBV/VPT (20 phien): giam / giam
-- RiskReward (tu swing points): 0.25 (khang cu 37.0, ho tro 35.0)
+- RiskReward (tu swing points): 0.14 (khang cu 28.4, ho tro 27.15)
 
 ## G — Quan tri (trong so 5%, mot phan)
 (khong tinh duoc — xem ghi chu ben duoi)
@@ -37,7 +35,6 @@ KHONG tinh duoc — can du lieu hoan toan ngoai BCTC (quy dat/phap ly, ty le lap
 KHONG tinh duoc — can du lieu hoan toan ngoai BCTC (quy dat/phap ly, ty le lap day/backlog, du an moi/chat xuc tac). Hoi Claude truc tiep voi du lieu bo sung tu nguoi dung hoac nguon rieng.
 
 ## Ghi chu / canh bao tu dong
-- Lech gia 43.2% giua Fundamental Pack (52,401) va Price Pack (36,600) — da tu dong dung gia Price Pack.
 - F: khong tinh duoc chi so don bay nao — thieu du lieu No vay/Von chu so huu tu Fundamental Pack (kiem tra da co du CDKT chua).
 - F: khong co Chi phi lai vay trong KQKD — chua tinh duoc Kha nang thanh toan lai vay.
 - F: Dong tien (CFO/Cash Conversion) THUONG KHONG CO — nhieu cong ty KCN co sheet LCTT Vietstock rong hoan toan o cac quy gan nhat (da xac nhan thuc te voi VGC). Neu Fundamental Pack co muc Luu chuyen tien te, doc them thu cong.

@@ -6,23 +6,23 @@ loai: co-hoc-BDS-KCN-L-O-F-V-C-T-G (T4d, tu dong)
 # Diem co hoc dinh gia BDS KCN — IDC
 
 **KHONG co S_raw tong hop** — thieu 55% trong so (L 25% + O 20% + C 10%), khong the cong gop mot cach co y nghia. Duoi day la cac cau phan da tinh duoc rieng le.
-**Gia dung de tinh:** 33,300 dong
+**Gia dung de tinh:** 33,000 dong
 
 ## F — Chat luong tai chinh (trong so 15%, mot phan)
 (khong tinh duoc — xem ghi chu ben duoi)
 
 ## V — Dinh gia (trong so 20%, mot phan — CHUA co P/RNAV)
-- P/E TTM: 5.62x
-- Earnings Yield: 17.8%
-- P/B (CHUA dieu chinh NCI — xem canh bao): 1.43x
+- P/E TTM: 5.57x
+- Earnings Yield: 17.9%
+- P/B (CHUA dieu chinh NCI — xem canh bao): 1.42x
 
 ## T — Ky thuat (trong so 5%, day du)
 - Trend (vi tri so MA20/50/200): 1/3 MA
-- RSI14: 52.7
-- MFI14: 50.0
-- Volume/MA20: 0.76x
+- RSI14: 47.7
+- MFI14: 51.2
+- Volume/MA20: 0.89x
 - Huong OBV/VPT (20 phien): giam / giam
-- RiskReward (tu swing points): 1.97 (khang cu 35.19, ho tro 32.34)
+- RiskReward (tu swing points): 0.45 (khang cu 33.3, ho tro 32.34)
 
 ## G — Quan tri (trong so 5%, mot phan)
 (khong tinh duoc — xem ghi chu ben duoi)
@@ -37,7 +37,7 @@ KHONG tinh duoc — can du lieu hoan toan ngoai BCTC (quy dat/phap ly, ty le lap
 KHONG tinh duoc — can du lieu hoan toan ngoai BCTC (quy dat/phap ly, ty le lap day/backlog, du an moi/chat xuc tac). Hoi Claude truc tiep voi du lieu bo sung tu nguoi dung hoac nguon rieng.
 
 ## Ghi chu / canh bao tu dong
-- Lech gia 24.7% giua Fundamental Pack (41,522) va Price Pack (33,300) — da tu dong dung gia Price Pack.
+- Lech gia 25.8% giua Fundamental Pack (41,522) va Price Pack (33,000) — da tu dong dung gia Price Pack.
 - F: khong tinh duoc chi so don bay nao — thieu du lieu No vay/Von chu so huu tu Fundamental Pack (kiem tra da co du CDKT chua).
 - F: khong co Chi phi lai vay trong KQKD — chua tinh duoc Kha nang thanh toan lai vay.
 - F: Dong tien (CFO/Cash Conversion) THUONG KHONG CO — nhieu cong ty KCN co sheet LCTT Vietstock rong hoan toan o cac quy gan nhat (da xac nhan thuc te voi VGC). Neu Fundamental Pack co muc Luu chuyen tien te, doc them thu cong.
