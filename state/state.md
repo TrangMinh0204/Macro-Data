@@ -32,6 +32,16 @@ thêm mã nào ngoài VN30 + HNX30.
 - HDG
 - VIX
 - HHS
+- SHS
+- SBT
+- KBC
+- DIG
+- DXG
+- DGW
+- DCM
+- DBC
+- GEX
+- VCK
 ---
 
 ## Định dạng STATE_UPDATE
