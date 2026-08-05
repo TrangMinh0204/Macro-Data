@@ -47,12 +47,42 @@ KQKD_METRICS = [
     ("LNTT", ["Tổng lợi nhuận trước thuế", "Lợi nhuận kế toán trước thuế", "Lợi nhuận trước thuế"]),
     ("LNST", ["Lợi nhuận sau thuế của cổ đông", "Lợi nhuận sau thuế của Công ty mẹ", "Lợi nhuận sau thuế"]),
     ("EPS_baocao", ["Lãi cơ bản trên cổ phiếu"]),
+    # --- Rieng nganh Chung khoan (CTCK) — da doi chieu 100% voi so that
+    # SSI Q2/2026 (3.319 / 1.422 / 1.091 / 462 / 341 / 812 / 1.529 / 1.231
+    # ty dong). Chu y "4.2. Chi phi lai vay" PHAI giu tien to "4.2." vi co
+    # 1 dong khac ("2.3. Chi phi lai vay, lo tu cac khoan cho vay va phai
+    # thu") cung chua cum "Chi phi lai vay" — khong co tien to se khop nham.
+    ("Tong_DT_hoat_dong_ck", ["Cộng doanh thu hoạt động (01"]),
+    ("Lai_FVTPL_ck", ["Lãi từ các tài sản tài chính ghi nhận thông qua lãi/lỗ (FVTPL)"]),
+    ("Lai_HTM_ck", ["Lãi từ các khoản đầu tư nắm giữ đến ngày đáo hạn (HTM)"]),
+    ("Lai_cho_vay_ck", ["Lãi từ các khoản cho vay và phải thu"]),
+    ("DT_moi_gioi_ck", ["Doanh thu môi giới chứng khoán"]),
+    ("CP_moi_gioi_ck", ["Chi phí môi giới chứng khoán"]),
+    ("CP_lai_vay_ck", ["4.2. Chi phí lãi vay"]),
 ]
 
 CDKT_METRICS = [
     ("Tong_tai_san", ["TỔNG CỘNG TÀI SẢN"]),
-    ("Tong_no_phai_tra", ["TỔNG NỢ PHẢI TRẢ"]),
+    # "TỔNG NỢ PHẢI TRẢ" khong ton tai trong bao cao CTCK — Vietstock ghi
+    # "A. NỢ PHẢI TRẢ (300=...)" khong co chu "TỔNG". Dung candidate ngan
+    # hon "NỢ PHẢI TRẢ" de khop ca 2 kieu (da xac nhan duy nhat 1 dong
+    # trong CDKT chua cum tu nay — khong dung nham dong "Phai tra nguoi
+    # ban", "Du phong phai tra"... vi cac dong do khong co dung cum
+    # "NỢ PHẢI TRẢ" lien tuc).
+    ("Tong_no_phai_tra", ["NỢ PHẢI TRẢ"]),
     ("Von_dieu_le", ["Vốn điều lệ"]),
+    # --- Rieng nganh Chung khoan (CTCK) — xac nhan nhan bang file that
+    # VietstockFinance_SSI_..._CDKT (04/08/2026), doi chieu dung 10 o CA
+    # trich trong tai lieu "Dinh gia SSI...". Suffix "_ck" de build_fund_pack
+    # tu nhan dien va sinh section rieng, giong co che "_nganhang".
+    ("Von_chu_so_huu_ck", ["VỐN CHỦ SỞ HỮU (400"]),
+    ("FVTPL_ck", ["(FVTPL)"]),
+    ("Cho_vay_ck", ["4. Các khoản cho vay"]),
+    ("HTM_ngan_han_ck", ["3. Các khoản đầu tư nắm giữ đến ngày đáo hạn (HTM)"]),
+    ("HTM_dai_han_ck", ["2.1. Các khoản đầu tư nắm giữ đến ngày đáo hạn"]),
+    ("Tien_va_tuong_duong_ck", ["Tiền và các khoản tương đương tiền"]),
+    ("Vay_ngan_han_ck", ["1. Vay và nợ thuê tài chính ngắn hạn"]),
+    ("LNST_chua_phan_phoi_ck", ["Lợi nhuận sau thuế chưa phân phối"]),
 ]
 
 
@@ -208,6 +238,66 @@ def build_fund_pack(ticker: str, cstc: dict, kqkd: dict, cdkt: dict, export_date
             if v is not None:
                 L.append(f"- {k.replace('_nganhang','')}: {fmt(v, 2)}%/quy "
                          f"(~uoc tinh nam: {fmt(v * 4, 2)}%)")
+        L.append("")
+
+    ck_cdkt_keys = [k for k in cdkt if k.endswith("_ck")]
+    ck_kqkd_keys = [k for k in kqkd if k.endswith("_ck")]
+    if (ck_cdkt_keys or ck_kqkd_keys) and latest_q:
+        L.append(f"## Chi so nganh Chung khoan (CTCK) — {latest_q}")
+        L.append("LUU Y: HTM tong = HTM ngan han + HTM dai han (2 dong rieng trong CDKT).")
+
+        def qv(d, key, q):
+            return d.get(key, {}).get(q)
+
+        ts = qv(cdkt, "Tong_tai_san", latest_q)
+        fvtpl = qv(cdkt, "FVTPL_ck", latest_q)
+        cho_vay = qv(cdkt, "Cho_vay_ck", latest_q)
+        htm_nh = qv(cdkt, "HTM_ngan_han_ck", latest_q)
+        htm_dh = qv(cdkt, "HTM_dai_han_ck", latest_q)
+        htm_tong = (htm_nh or 0) + (htm_dh or 0) if (htm_nh is not None or htm_dh is not None) else None
+        tien = qv(cdkt, "Tien_va_tuong_duong_ck", latest_q)
+        no_pt = qv(cdkt, "Tong_no_phai_tra", latest_q)
+        vay_nh = qv(cdkt, "Vay_ngan_han_ck", latest_q)
+        vcsh = qv(cdkt, "Von_chu_so_huu_ck", latest_q)
+        lnst_cpp = qv(cdkt, "LNST_chua_phan_phoi_ck", latest_q)
+
+        if cdkt and ck_cdkt_keys:
+            L.append("")
+            L.append("**Cau truc tai chinh (ty dong):**")
+            for label, val in [("Tong tai san", ts), ("FVTPL", fvtpl), ("Cac khoan cho vay", cho_vay),
+                               ("HTM (ngan + dai han)", htm_tong), ("Tien va tuong duong", tien),
+                               ("Tong no phai tra", no_pt), ("Vay va no thue TC ngan han", vay_nh),
+                               ("Von chu so huu", vcsh), ("LNST chua phan phoi", lnst_cpp)]:
+                ty_trong = f" ({fmt(val/ts*100,1)}% tai san)" if (val is not None and ts) else ""
+                L.append(f"- {label}: {fmt(val,0)}{ty_trong}")
+            if ts and fvtpl is not None and cho_vay is not None:
+                L.append(f"- FVTPL + Cho vay / Tong tai san: {fmt((fvtpl+cho_vay)/ts*100,1)}%")
+            if vcsh and no_pt is not None:
+                L.append(f"- Don bay No/VCSH: {fmt(no_pt/vcsh*100,2)}%")
+
+        dt_mg = qv(kqkd, "DT_moi_gioi_ck", latest_q)
+        cp_mg = qv(kqkd, "CP_moi_gioi_ck", latest_q)
+        lai_cv = qv(kqkd, "Lai_cho_vay_ck", latest_q)
+        lai_htm_kq = qv(kqkd, "Lai_HTM_ck", latest_q)
+        cp_lv = qv(kqkd, "CP_lai_vay_ck", latest_q)
+        tong_dt = qv(kqkd, "Tong_DT_hoat_dong_ck", latest_q)
+        lai_fvtpl = qv(kqkd, "Lai_FVTPL_ck", latest_q)
+
+        if kqkd and ck_kqkd_keys:
+            L.append("")
+            L.append(f"**Ket qua kinh doanh quy {latest_q} (ty dong):**")
+            for label, val in [("Tong doanh thu hoat dong", tong_dt), ("Lai FVTPL", lai_fvtpl),
+                               ("Lai cho vay va phai thu", lai_cv), ("Doanh thu moi gioi", dt_mg),
+                               ("Chi phi moi gioi", cp_mg), ("Chi phi lai vay", cp_lv)]:
+                L.append(f"- {label}: {fmt(val,0)}")
+            if dt_mg is not None and cp_mg is not None:
+                loi_nhuan_gop = dt_mg - cp_mg
+                bien = fmt(loi_nhuan_gop/dt_mg*100,1) if dt_mg else "N/A"
+                L.append(f"- Loi nhuan gop moi gioi = {fmt(dt_mg,0)} - {fmt(cp_mg,0)} = {fmt(loi_nhuan_gop,0)} (bien {bien}%)")
+            if None not in (lai_cv, lai_htm_kq, cp_lv):
+                nii = lai_cv + lai_htm_kq - cp_lv
+                L.append(f"- Thu nhap lai thuan dai dien = {fmt(lai_cv,0)} + {fmt(lai_htm_kq,0)} - {fmt(cp_lv,0)} = {fmt(nii,0)} "
+                         "(chua phan bo chi phi von cho tu doanh — chi dung kiem tra so bo)")
         L.append("")
 
     if kqkd:
