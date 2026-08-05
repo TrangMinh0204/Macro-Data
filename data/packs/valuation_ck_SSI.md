@@ -1,6 +1,6 @@
 # VALUATION PACK — SSI (Ngành chứng khoán)
 
-- Kỳ báo cáo: **Q2/2026** | Sinh lúc: 05/08/2026 15:26
+- Kỳ báo cáo: **Q2/2026** | Sinh lúc: 05/08/2026 15:37
 - Nguồn dữ liệu: file Vietstock gốc (CSTC/KQKD/CDKT) dưới `data/fundamentals/CK/SSI/`, đọc qua `fund_pack.py` — không cần input thủ công.
 - Phương pháp chính: **P/B hợp lý** `(ROE − g)/(Ke − g)`; kiểm tra chéo P/E hợp lý, ROE hàm ý; RI/DDM khi config có dự báo.
 - Lưu ý: đây là phân tích, không phải khuyến nghị mua/bán.
