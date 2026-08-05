@@ -31,7 +31,7 @@ jobs:
           python-version: "3.11"
 
       - name: Install deps
-        run: pip install pyyaml
+        run: pip install pyyaml pandas openpyxl
 
       - name: Run valuation
         run: python scripts/valuation_ck.py
@@ -40,7 +40,8 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/packs/valuation_ck_*.md
+          mkdir -p data/packs
+          git add data/packs/
           if git diff --cached --quiet; then
             echo "Khong co thay doi de commit."
             exit 0
