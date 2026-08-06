@@ -1,28 +1,28 @@
 ---
 ma: DIG
 loai: money-flow-score (T4e, tu dong)
-ngay_du_lieu: 260805
+ngay_du_lieu: 260806
 ---
 
 # Money Flow Score — DIG
 
-**MoneyFlowScore: 0.31** — Dong tien vao cai thien
+**MoneyFlowScore: 0.20** — Trung tinh hoac tich luy
 (chi tinh tren 80% trong so co du lieu — xem ghi chu thanh phan thieu ben duoi)
 **Xac nhan dong tien: 1/6 dieu kien** (CHUA du xac nhan)
 
 ## Cac cau phan Z-score
-- Z(Return): 0.14
-- Z(GTGD): 0.18
-- Z(CMF20): 0.23
+- Z(Return): 0.19
+- Z(GTGD): -0.76
+- Z(CMF20): 0.67
 - Z(RS20 vs VNINDEX): N/A
-- Z(OBV Change 20 phien): 1.26
+- Z(OBV Change 20 phien): 1.13
 
 LUU Y: Z(RS) can data/packs/VNINDEX.md (Price Pack cua VNINDEX) de so sanh — neu N/A, kiem tra file nay co ton tai va du >= 40 phien khong.
 
 ## Gia tri tho quy chieu
-- Dong cua gan nhat (260805): 10.7
-- GTGD phien gan nhat: 116,630,000
-- CMF20: -0.206
+- Dong cua gan nhat (260806): 10.7
+- GTGD phien gan nhat: 78,110,000
+- CMF20: -0.186
 - RS20 vs VNINDEX: -8.84%
 
 ## Chi tiet 6 dieu kien xac nhan

@@ -1,29 +1,29 @@
 ---
 ma: HUT
 loai: money-flow-score (T4e, tu dong)
-ngay_du_lieu: 260805
+ngay_du_lieu: 260806
 ---
 
 # Money Flow Score — HUT
 
-**MoneyFlowScore: -1.05** — Dong tien ra MANH
+**MoneyFlowScore: -1.52** — Dong tien ra MANH
 (chi tinh tren 80% trong so co du lieu — xem ghi chu thanh phan thieu ben duoi)
 **Xac nhan dong tien: 1/6 dieu kien** (CHUA du xac nhan)
 
 ## Cac cau phan Z-score
-- Z(Return): -1.21
-- Z(GTGD): -0.84
-- Z(CMF20): -1.00
+- Z(Return): -2.76
+- Z(GTGD): -0.73
+- Z(CMF20): -1.53
 - Z(RS20 vs VNINDEX): N/A
-- Z(OBV Change 20 phien): -2.56
+- Z(OBV Change 20 phien): -2.50
 
 LUU Y: Z(RS) can data/packs/VNINDEX.md (Price Pack cua VNINDEX) de so sanh — neu N/A, kiem tra file nay co ton tai va du >= 40 phien khong.
 
 ## Gia tri tho quy chieu
-- Dong cua gan nhat (260805): 14.0
-- GTGD phien gan nhat: 19,600,000
-- CMF20: 0.582
-- RS20 vs VNINDEX: -3.87%
+- Dong cua gan nhat (260806): 13.6
+- GTGD phien gan nhat: 21,760,000
+- CMF20: 0.525
+- RS20 vs VNINDEX: -6.62%
 
 ## Chi tiet 6 dieu kien xac nhan
 - [ ] Gia > MA20 va MA20 huong len
