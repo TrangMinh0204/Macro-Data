@@ -9,11 +9,11 @@ so_phien_daily: 5067
 ## Chi bao tinh san
 - MA20/50/200: 284.28 / 299.20 / 267.45
 - RSI14: 54.3
-- Volume/MA20vol: 0.90x
+- Volume/MA20vol: 0.85x
 - 52w High/Low (dieu chinh): 339.91 / 233.39
-- OBV: 30455149513 (huong 20 phien: giam)
-- VPT: 75398288 (huong 20 phien: giam)
-- MFI14: 48.2
+- OBV: 30452598652 (huong 20 phien: giam)
+- VPT: 75334341 (huong 20 phien: giam)
+- MFI14: 48.0
 
 ## Cloudbank metrics (Bulkowski Ch.18)
 - 30-week SMA: 272.34 | Gia hien tai vs SMA: 7.80%
@@ -125,7 +125,7 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 260731,271.66,275.89,271.16,275.05,59.0M
 260803,277.02,279.89,276.96,279.28,50.9M
 260804,286.02,287.11,285.31,286.41,38.5M
-260805,293.72,296.49,292.96,293.59,47.8M
+260805,293.72,296.49,292.96,293.59,45.3M
 
 ## Weekly — 52 tuan gan nhat (date,O,H,L,C,V)
 250808,264.05,273.23,261.04,272.46,864.2M
@@ -179,7 +179,7 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 260717,303.58,304.09,280.66,291.70,282.3M
 260724,290.35,294.01,271.63,272.99,298.7M
 260731,272.66,275.95,266.12,275.05,249.1M
-260805,277.02,296.49,276.96,293.59,137.2M
+260805,277.02,296.49,276.96,293.59,134.7M
 
 ## Monthly — 60 thang gan nhat (date,O,H,L,C,V)
 210930,342.81,365.75,341.87,357.33,3028.5M
@@ -241,7 +241,7 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 260529,251.07,294.94,245.40,294.94,1038.8M
 260630,305.11,339.91,283.51,313.16,961.9M
 260731,313.28,315.09,266.12,275.05,1227.0M
-260805,277.02,296.49,276.96,293.59,137.2M
+260805,277.02,296.49,276.96,293.59,134.7M
 
 ## Gioi han
 - Pack nay CHI co du lieu gia (khong co EPS/BVPS/BCTC) — phan dinh gia Graham dung file rieng data/packs/{MA}-fund.md (T4b, doc tu file Excel Vietstock user upload).

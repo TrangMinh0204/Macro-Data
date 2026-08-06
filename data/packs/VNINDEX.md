@@ -23,11 +23,11 @@ Phat hien dong O/H/L/C bat thuong tu nguon CafeF cho ma nay — KHONG dung cac n
 ## Chi bao tinh san
 - MA20/50/200: 1751.95 / 1803.54 / 1772.71
 - RSI14: 45.5
-- Volume/MA20vol: 0.96x
+- Volume/MA20vol: 1.05x
 - 52w High/Low (dieu chinh): 1933.11 / 1491.11
-- OBV: 146921367417 (huong 20 phien: giam)
-- VPT: 20711213 (huong 20 phien: giam)
-- MFI14: 42.6
+- OBV: 146861507317 (huong 20 phien: giam)
+- VPT: 20685278 (huong 20 phien: giam)
+- MFI14: 43.0
 
 ## Cloudbank metrics (Bulkowski Ch.18)
 - 30-week SMA: 1811.49 | Gia hien tai vs SMA: -1.93%
@@ -139,7 +139,7 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 260731,1703.94,1745.93,1701.14,1744.66,669.8M
 260803,1745.06,1767.58,1737.26,1762.84,721.6M
 260804,1764.98,1777.23,1759.64,1777.23,597.4M
-260805,1784.94,1790.87,1769.44,1776.46,629.9M
+260805,1784.94,1790.87,1769.44,1776.46,689.8M
 
 ## Weekly — 52 tuan gan nhat (date,O,H,L,C,V)
 250808,1493.37,1589.58,1491.11,1584.95,9090.3M
@@ -193,7 +193,7 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 260717,1829.50,1829.50,1757.42,1787.45,3020.9M
 260724,1782.93,1783.83,1658.35,1686.11,3808.7M
 260731,1694.78,1745.93,1651.20,1744.66,3258.8M
-260805,1745.06,1790.87,1737.26,1776.46,1948.9M
+260805,1745.06,1790.87,1737.26,1776.46,2008.8M
 
 ## Monthly — 60 thang gan nhat (date,O,H,L,C,V)
 210930,1328.54,1365.92,1316.41,1342.06,13921.4M
@@ -255,7 +255,7 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 260529,1870.66,1933.11,1840.43,1863.49,15472.4M
 260630,1867.26,1894.75,1775.72,1860.01,12352.2M
 260731,1859.96,1873.58,1651.20,1744.66,14002.2M
-260805,1745.06,1790.87,1737.26,1776.46,1948.9M
+260805,1745.06,1790.87,1737.26,1776.46,2008.8M
 
 ## Gioi han
 - Pack nay CHI co du lieu gia (khong co EPS/BVPS/BCTC) — phan dinh gia Graham dung file rieng data/packs/{MA}-fund.md (T4b, doc tu file Excel Vietstock user upload).
