@@ -1,7 +1,7 @@
 ---
 ma: VRE
-ngay_du_lieu_gan_nhat: 2026-08-27
-so_phien_daily: 2193
+ngay_du_lieu_gan_nhat: 2026-09-03
+so_phien_daily: 2195
 ---
 
 # Price Pack — VRE
@@ -12,24 +12,24 @@ Phat hien dong O/H/L/C bat thuong tu nguon CafeF cho ma nay — KHONG dung cac n
 - 2019-08-09: Low (34.2376) > min(Open,Close) (33.5133)
 
 ## Chi bao tinh san
-- MA20/50/200: 25.13 / 25.61 / 28.51
-- RSI14: 60.4
-- Volume/MA20vol: 1.37x
+- MA20/50/200: 25.25 / 25.50 / 28.47
+- RSI14: 59.1
+- Volume/MA20vol: 0.87x
 - 52w High/Low (dieu chinh): 43.65 / 20.90
 - Dinh/day 52w (CHUA dieu chinh, muc gia tam ly): 43.40 / 21.30
-- OBV: 591990270 (huong 20 phien: tang)
-- VPT: 25062475 (huong 20 phien: tang)
-- MFI14: 66.2
+- OBV: 605355470 (huong 20 phien: tang)
+- VPT: 25133030 (huong 20 phien: giam)
+- MFI14: 67.9
 
 ## Cloudbank metrics (Bulkowski Ch.18)
-- 30-week SMA: 27.40 | Gia hien tai vs SMA: -5.11%
-- ATH (theo lich su co du lieu): 47.09 | Drawdown tu ATH: -44.79%
-- ATL: 15.55 | Hoi phuc tu ATL: 67.21%
+- 30-week SMA: 27.31 | Gia hien tai vs SMA: -3.70%
+- ATH (theo lich su co du lieu): 47.09 | Drawdown tu ATH: -44.15%
+- ATL: 15.55 | Hoi phuc tu ATL: 69.14%
 
 ## Cup with Handle metrics (proxy)
-- Khoang cach toi 52w high: -40.44%
-- Do sau tu rim (dinh 90 phien gan nhat): -26.45%
-- Uptrend 6 thang truoc (proxy, ~190->90 phien truoc): 19.72%
+- Khoang cach toi 52w high: -39.75%
+- Do sau tu rim (dinh 90 phien gan nhat): -25.60%
+- Uptrend 6 thang truoc (proxy, ~190->90 phien truoc): 15.42%
 
 ## Swing points (ZigZag 5%) — 30 pivot gan nhat
 - 2025-07-29 L 27.04
@@ -61,7 +61,7 @@ Phat hien dong O/H/L/C bat thuong tu nguon CafeF cho ma nay — KHONG dung cac n
 - 2026-07-28 L 21.30
 - 2026-08-05 H 26.45
 - 2026-08-14 L 23.95
-- 2026-08-27 H 26.00 (chua xac nhan)
+- 2026-09-03 H 26.30 (chua xac nhan)
 
 ## Ma tran ty le Fibonacci (7 pivot gan nhat)
 Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6/127.2/161.8% de nhan dien harmonic (viec nay thuoc skill, khong phai script).
@@ -69,11 +69,9 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 - L3/L2 (H2026-06-22 -> L2026-07-28): 339.0%
 - L4/L3 (L2026-07-28 -> H2026-08-05): 61.7%
 - L5/L4 (H2026-08-05 -> L2026-08-14): 48.5%
-- L6/L5 (L2026-08-14 -> H2026-08-27): 82.0%
+- L6/L5 (L2026-08-14 -> H2026-09-03): 94.0%
 
 ## Daily — 60 phien gan nhat (date,O,H,L,C,V)
-260605,30.08,30.57,29.79,30.13,4.3M
-260608,29.84,29.84,28.59,28.59,4.7M
 260609,28.73,29.07,27.91,28.10,3.3M
 260610,28.30,28.68,28.10,28.64,2.1M
 260611,28.44,28.44,28.10,28.15,1.9M
@@ -132,9 +130,10 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 260825,25.10,25.80,25.10,25.20,6.9M
 260826,25.30,25.60,25.05,25.60,4.3M
 260827,25.60,26.80,25.60,26.00,8.2M
+260828,26.20,26.75,25.90,26.10,8.3M
+260903,26.10,26.65,25.85,26.30,5.0M
 
 ## Weekly — 52 tuan gan nhat (date,O,H,L,C,V)
-250829,29.07,30.61,28.39,29.36,35.0M
 250905,28.97,30.13,28.87,29.26,18.7M
 250912,29.26,30.66,29.02,29.70,17.5M
 250919,29.70,30.42,28.44,28.44,24.1M
@@ -185,10 +184,10 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 260807,24.80,26.80,24.35,24.95,37.1M
 260814,25.30,26.00,23.65,23.95,29.6M
 260821,24.00,25.30,23.90,25.30,16.9M
-260827,25.60,26.80,25.05,26.00,24.1M
+260828,25.60,26.80,25.05,26.10,32.4M
+260903,26.10,26.65,25.85,26.30,5.0M
 
 ## Monthly — 60 thang gan nhat (date,O,H,L,C,V)
-210930,26.17,29.41,26.07,28.10,104.1M
 211029,28.10,30.42,27.09,30.13,121.8M
 211130,30.33,31.39,28.35,28.78,195.4M
 211231,28.83,30.81,26.95,29.07,170.4M
@@ -247,7 +246,8 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 260529,31.58,36.22,30.04,31.15,170.0M
 260630,31.10,31.10,26.61,28.50,112.9M
 260731,28.50,28.90,20.90,24.80,119.1M
-260827,24.80,26.80,23.65,26.00,107.7M
+260828,24.80,26.80,23.65,26.10,116.1M
+260903,26.10,26.65,25.85,26.30,5.0M
 
 ## Gioi han
 - Pack nay CHI co du lieu gia (khong co EPS/BVPS/BCTC) — phan dinh gia Graham dung file rieng data/packs/{MA}-fund.md (T4b, doc tu file Excel Vietstock user upload).

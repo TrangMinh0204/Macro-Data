@@ -1,7 +1,7 @@
 ---
 ma: NDN
-ngay_du_lieu_gan_nhat: 2026-08-27
-so_phien_daily: 3830
+ngay_du_lieu_gan_nhat: 2026-09-03
+so_phien_daily: 3832
 ---
 
 # Price Pack — NDN
@@ -12,24 +12,24 @@ Phat hien dong O/H/L/C bat thuong tu nguon CafeF cho ma nay — KHONG dung cac n
 - 2018-07-31: Low (6.5801) > High (6.444)
 
 ## Chi bao tinh san
-- MA20/50/200: 8.94 / 9.71 / 10.63
-- RSI14: 33.3
-- Volume/MA20vol: 0.41x
-- 52w High/Low (dieu chinh): 14.20 / 8.40
-- Dinh/day 52w (CHUA dieu chinh, muc gia tam ly): 13.90 / 8.60
-- OBV: 120716086 (huong 20 phien: giam)
-- VPT: 6030128 (huong 20 phien: giam)
-- MFI14: 32.3
+- MA20/50/200: 8.88 / 9.62 / 10.60
+- RSI14: 31.3
+- Volume/MA20vol: 0.64x
+- 52w High/Low (dieu chinh): 14.20 / 8.30
+- Dinh/day 52w (CHUA dieu chinh, muc gia tam ly): 13.90 / 8.50
+- OBV: 120566586 (huong 20 phien: giam)
+- VPT: 6026692 (huong 20 phien: giam)
+- MFI14: 33.1
 
 ## Cloudbank metrics (Bulkowski Ch.18)
-- 30-week SMA: 10.31 | Gia hien tai vs SMA: -15.59%
-- ATH (theo lich su co du lieu): 22.96 | Drawdown tu ATH: -62.11%
-- ATL: 0.83 | Hoi phuc tu ATL: 949.46%
+- 30-week SMA: 10.21 | Gia hien tai vs SMA: -16.72%
+- ATH (theo lich su co du lieu): 22.96 | Drawdown tu ATH: -62.98%
+- ATL: 0.83 | Hoi phuc tu ATL: 925.33%
 
 ## Cup with Handle metrics (proxy)
-- Khoang cach toi 52w high: -38.73%
-- Do sau tu rim (dinh 90 phien gan nhat): -24.35%
-- Uptrend 6 thang truoc (proxy, ~190->90 phien truoc): 2.59%
+- Khoang cach toi 52w high: -40.14%
+- Do sau tu rim (dinh 90 phien gan nhat): -26.09%
+- Uptrend 6 thang truoc (proxy, ~190->90 phien truoc): 3.48%
 
 ## Swing points (ZigZag 5%) — 30 pivot gan nhat
 - 2024-04-01 H 12.04
@@ -61,7 +61,7 @@ Phat hien dong O/H/L/C bat thuong tu nguon CafeF cho ma nay — KHONG dung cac n
 - 2026-03-11 H 11.00
 - 2026-03-23 L 9.90
 - 2026-05-14 H 11.50
-- 2026-08-14 L 8.60 (chua xac nhan)
+- 2026-08-28 L 8.50 (chua xac nhan)
 
 ## Ma tran ty le Fibonacci (7 pivot gan nhat)
 Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6/127.2/161.8% de nhan dien harmonic (viec nay thuoc skill, khong phai script).
@@ -69,11 +69,9 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 - L3/L2 (L2026-03-09 -> H2026-03-11): 57.1%
 - L4/L3 (H2026-03-11 -> L2026-03-23): 91.7%
 - L5/L4 (L2026-03-23 -> H2026-05-14): 145.5%
-- L6/L5 (H2026-05-14 -> L2026-08-14): 181.3%
+- L6/L5 (H2026-05-14 -> L2026-08-28): 187.5%
 
 ## Daily — 60 phien gan nhat (date,O,H,L,C,V)
-260605,10.60,10.60,10.50,10.60,178K
-260608,10.50,10.60,10.40,10.60,162K
 260609,10.40,10.60,10.40,10.60,105K
 260610,10.60,10.60,10.50,10.60,63K
 260611,10.50,10.60,10.50,10.60,84K
@@ -132,9 +130,10 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 260825,8.80,8.80,8.60,8.70,99K
 260826,8.70,8.80,8.70,8.80,66K
 260827,8.80,8.80,8.60,8.70,60K
+260828,8.80,8.80,8.50,8.50,150K
+260903,8.50,8.50,8.30,8.50,92K
 
 ## Weekly — 52 tuan gan nhat (date,O,H,L,C,V)
-250829,12.30,12.90,11.70,12.80,3.2M
 250905,12.80,13.40,12.60,12.60,2.7M
 250912,12.60,12.60,11.60,12.40,3.4M
 250919,12.30,12.90,12.20,12.50,2.4M
@@ -185,10 +184,10 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 260807,9.00,9.30,8.80,9.20,704K
 260814,9.20,9.20,8.60,8.60,1.1M
 260821,8.60,8.90,8.50,8.70,556K
-260827,8.80,8.80,8.60,8.70,378K
+260828,8.80,8.80,8.50,8.50,527K
+260903,8.50,8.50,8.30,8.50,92K
 
 ## Monthly — 60 thang gan nhat (date,O,H,L,C,V)
-210930,18.34,19.32,16.14,16.96,30.9M
 211029,16.95,21.08,16.71,20.74,78.3M
 211130,20.74,22.96,18.18,19.55,113.2M
 211231,19.37,19.55,15.96,16.73,55.9M
@@ -247,7 +246,8 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 260529,10.30,11.50,10.10,10.50,4.0M
 260630,10.50,11.00,10.40,10.50,3.5M
 260731,10.50,11.00,8.40,9.00,3.4M
-260827,9.00,9.30,8.50,8.70,2.8M
+260828,9.00,9.30,8.50,8.50,2.9M
+260903,8.50,8.50,8.30,8.50,92K
 
 ## Gioi han
 - Pack nay CHI co du lieu gia (khong co EPS/BVPS/BCTC) — phan dinh gia Graham dung file rieng data/packs/{MA}-fund.md (T4b, doc tu file Excel Vietstock user upload).
