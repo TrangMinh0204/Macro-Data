@@ -1,8 +1,8 @@
 # Data Health — Job B (tu dong, khong sua tay)
 
 - Trang thai lan chay gan nhat: **OK — da cache thanh cong**
-- Ngay du lieu muc tieu lan nay: 2026-09-10
-- Cache VNINDEX truoc lan chay nay: 2026-09-09
+- Ngay du lieu muc tieu lan nay: 2026-09-11
+- Cache VNINDEX truoc lan chay nay: 2026-09-10
 - Chi tiet: Coverage 100.0%, 76 file.
 
 Neu trang thai la PENDING, phien chat tiep theo nen doc file nay va
