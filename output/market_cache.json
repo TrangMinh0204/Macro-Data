@@ -1,10 +1,20 @@
 {
  "gold": {
-  "xau_usd": 4330.3,
-  "xag_usd": 63.95,
+  "xau_usd": 4288.0,
+  "xag_usd": 63.02,
   "sjc_vnd": null,
   "sjc_buy": null,
   "source": "gold-api.com",
-  "cached_at": "2026-09-14 12:53 ICT"
+  "cached_at": "2026-09-14 19:06 ICT"
+ },
+ "vnindex": {
+  "vnindex": 536.0,
+  "vnindex_change": null,
+  "vnindex_pct": null,
+  "hnx": null,
+  "hnx_change": null,
+  "total_value_bn": null,
+  "source": "CafeF Jina (fallback, chưa xác thực change/pct)",
+  "cached_at": "2026-09-14 19:06 ICT"
  }
 }
