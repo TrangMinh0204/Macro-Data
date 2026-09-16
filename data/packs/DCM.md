@@ -1,7 +1,7 @@
 ---
 ma: DCM
-ngay_du_lieu_gan_nhat: 2026-09-14
-so_phien_daily: 2860
+ngay_du_lieu_gan_nhat: 2026-09-16
+so_phien_daily: 2862
 ---
 
 # Price Pack — DCM
@@ -11,24 +11,24 @@ Phat hien dong O/H/L/C bat thuong tu nguon CafeF cho ma nay — KHONG dung cac n
 - 2015-04-01: High (6.4341) < max(Open,Close) (6.4818)
 
 ## Chi bao tinh san
-- MA20/50/200: 31.55 / 31.57 / 35.82
-- RSI14: 60.7
-- Volume/MA20vol: 0.86x
+- MA20/50/200: 31.84 / 31.58 / 35.83
+- RSI14: 64.0
+- Volume/MA20vol: 1.07x
 - 52w High/Low (dieu chinh): 50.01 / 28.50
 - Dinh/day 52w (CHUA dieu chinh, muc gia tam ly): 50.20 / 28.90
-- OBV: 658639460 (huong 20 phien: tang)
-- VPT: 27433169 (huong 20 phien: tang)
-- MFI14: 69.9
+- OBV: 660105560 (huong 20 phien: tang)
+- VPT: 27596773 (huong 20 phien: tang)
+- MFI14: 71.0
 
 ## Cloudbank metrics (Bulkowski Ch.18)
-- 30-week SMA: 36.83 | Gia hien tai vs SMA: -11.89%
-- ATH (theo lich su co du lieu): 50.01 | Drawdown tu ATH: -35.12%
-- ATL: 3.38 | Hoi phuc tu ATL: 859.69%
+- 30-week SMA: 36.86 | Gia hien tai vs SMA: -9.39%
+- ATH (theo lich su co du lieu): 50.01 | Drawdown tu ATH: -33.22%
+- ATL: 3.38 | Hoi phuc tu ATL: 887.79%
 
 ## Cup with Handle metrics (proxy)
-- Khoang cach toi 52w high: -35.12%
-- Do sau tu rim (dinh 90 phien gan nhat): -23.72%
-- Uptrend 6 thang truoc (proxy, ~190->90 phien truoc): 46.57%
+- Khoang cach toi 52w high: -33.22%
+- Do sau tu rim (dinh 90 phien gan nhat): -21.49%
+- Uptrend 6 thang truoc (proxy, ~190->90 phien truoc): 48.52%
 
 ## Swing points (ZigZag 5%) — 30 pivot gan nhat
 - 2025-04-09 L 22.50
@@ -60,7 +60,7 @@ Phat hien dong O/H/L/C bat thuong tu nguon CafeF cho ma nay — KHONG dung cac n
 - 2026-07-06 L 32.66
 - 2026-07-08 H 34.65
 - 2026-07-22 L 28.90
-- 2026-09-08 H 32.75 (chua xac nhan)
+- 2026-09-15 H 33.80 (chua xac nhan)
 
 ## Ma tran ty le Fibonacci (7 pivot gan nhat)
 Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6/127.2/161.8% de nhan dien harmonic (viec nay thuoc skill, khong phai script).
@@ -68,11 +68,9 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 - L3/L2 (H2026-05-18 -> L2026-07-06): 217.7%
 - L4/L3 (L2026-07-06 -> H2026-07-08): 20.1%
 - L5/L4 (H2026-07-08 -> L2026-07-22): 289.6%
-- L6/L5 (L2026-07-22 -> H2026-09-08): 67.0%
+- L6/L5 (L2026-07-22 -> H2026-09-15): 85.2%
 
 ## Daily — 60 phien gan nhat (date,O,H,L,C,V)
-260618,34.32,35.17,34.32,34.74,2.4M
-260619,34.79,34.88,34.46,34.60,1.9M
 260622,34.65,35.22,34.08,34.89,1.8M
 260623,34.88,34.93,33.84,33.85,3.8M
 260624,34.03,34.03,33.37,33.51,1.9M
@@ -131,6 +129,8 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 260910,32.80,33.15,32.40,32.50,2.9M
 260911,32.80,33.30,32.40,32.50,4.5M
 260914,32.60,32.90,31.90,32.45,2.6M
+260915,32.40,33.95,32.30,33.80,4.9M
+260916,33.90,34.25,33.40,33.40,3.4M
 
 ## Weekly — 52 tuan gan nhat (date,O,H,L,C,V)
 250919,37.25,37.76,35.64,35.64,12.8M
@@ -184,7 +184,7 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 260828,31.75,32.20,30.75,30.85,12.0M
 260904,31.25,32.80,31.20,32.55,11.4M
 260911,32.60,33.30,31.70,32.50,18.9M
-260914,32.60,32.90,31.90,32.45,2.6M
+260916,32.60,34.25,31.90,33.40,11.0M
 
 ## Monthly — 60 thang gan nhat (date,O,H,L,C,V)
 211029,19.40,24.87,19.36,24.29,148.2M
@@ -246,7 +246,7 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 260630,37.63,37.86,32.76,33.28,50.3M
 260731,33.47,34.83,28.50,30.70,49.2M
 260828,30.70,32.40,30.25,30.85,45.2M
-260914,31.25,33.30,31.20,32.45,33.0M
+260916,31.25,34.25,31.20,33.40,41.3M
 
 ## Gioi han
 - Pack nay CHI co du lieu gia (khong co EPS/BVPS/BCTC) — phan dinh gia Graham dung file rieng data/packs/{MA}-fund.md (T4b, doc tu file Excel Vietstock user upload).
