@@ -657,7 +657,7 @@ vao dau pack cua ma tuong ung.
 - VNM 2006-12-04: High (4.0492) < max(Open,Close) (4.1265)
 - VNM 2006-11-30: High (3.8582) < max(Open,Close) (4.0501)
 - VNM 2006-08-07: Low (2.7504) > min(Open,Close) (2.6555)
-- VPB 2019-10-07: High (7.1814) < max(Open,Close) (7.2937)
+- VPB 2019-10-07: High (5.6986) < max(Open,Close) (5.7876)
 - VPL 2009-04-10: Low (34.8678) > min(Open,Close) (33.2536)
 - VPL 2009-04-09: High (33.8993) < max(Open,Close) (34.8678)
 - VPL 2009-04-02: Low (34.2221) > min(Open,Close) (32.9307)
