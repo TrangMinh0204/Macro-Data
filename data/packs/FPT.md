@@ -1,7 +1,7 @@
 ---
 ma: FPT
-ngay_du_lieu_gan_nhat: 2026-09-25
-so_phien_daily: 4924
+ngay_du_lieu_gan_nhat: 2026-09-29
+so_phien_daily: 4926
 ---
 
 # Price Pack — FPT
@@ -85,27 +85,26 @@ Phat hien dong O/H/L/C bat thuong tu nguon CafeF cho ma nay — KHONG dung cac n
 - 2006-12-13: High (8.72) < max(Open,Close) (8.7519)
 
 ## Chi bao tinh san
-- MA20/50/200: 66.10 / 63.66 / 72.08
-- RSI14: 45.2
-- Volume/MA20vol: 0.56x
+- MA20/50/200: 65.86 / 63.75 / 71.85
+- RSI14: 39.7
+- Volume/MA20vol: 0.51x
 - 52w High/Low (dieu chinh): 97.47 / 55.91
 - Dinh/day 52w (CHUA dieu chinh, muc gia tam ly): 106.10 / 62.20
-- OBV: 30140190 (huong 20 phien: tang)
-- VPT: 6704345 (huong 20 phien: giam)
-- MFI14: 43.9
+- OBV: 21873490 (huong 20 phien: giam)
+- VPT: 6600293 (huong 20 phien: giam)
+- MFI14: 39.8
 
 ## Cloudbank metrics (Bulkowski Ch.18)
-- 30-week SMA: 65.71 | Gia hien tai vs SMA: -1.54%
-- ATH (theo lich su co du lieu): 119.37 | Drawdown tu ATH: -45.80%
-- ATL: 1.56 | Hoi phuc tu ATL: 4035.51%
+- 30-week SMA: 65.38 | Gia hien tai vs SMA: -3.33%
+- ATH (theo lich su co du lieu): 119.37 | Drawdown tu ATH: -47.06%
+- ATL: 1.56 | Hoi phuc tu ATL: 3939.63%
 
 ## Cup with Handle metrics (proxy)
-- Khoang cach toi 52w high: -33.62%
-- Do sau tu rim (dinh 90 phien gan nhat): -7.14%
-- Uptrend 6 thang truoc (proxy, ~190->90 phien truoc): 10.64%
+- Khoang cach toi 52w high: -35.16%
+- Do sau tu rim (dinh 90 phien gan nhat): -9.13%
+- Uptrend 6 thang truoc (proxy, ~190->90 phien truoc): 12.99%
 
 ## Swing points (ZigZag 5%) — 30 pivot gan nhat
-- 2024-08-05 L 90.13
 - 2024-10-10 H 107.68
 - 2024-11-19 L 98.79
 - 2025-01-23 H 118.07
@@ -134,19 +133,18 @@ Phat hien dong O/H/L/C bat thuong tu nguon CafeF cho ma nay — KHONG dung cac n
 - 2026-05-28 L 64.73
 - 2026-06-03 H 69.55
 - 2026-07-27 L 56.55
-- 2026-09-10 H 67.73 (chua xac nhan)
+- 2026-09-10 H 67.73
+- 2026-09-29 L 63.20 (chua xac nhan)
 
 ## Ma tran ty le Fibonacci (7 pivot gan nhat)
 Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6/127.2/161.8% de nhan dien harmonic (viec nay thuoc skill, khong phai script).
-- L2/L1 (L2026-05-11 -> H2026-05-20): 84.6%
-- L3/L2 (H2026-05-20 -> L2026-05-28): 71.7%
-- L4/L3 (L2026-05-28 -> H2026-06-03): 97.4%
-- L5/L4 (H2026-06-03 -> L2026-07-27): 269.8%
-- L6/L5 (L2026-07-27 -> H2026-09-10): 86.0%
+- L2/L1 (H2026-05-20 -> L2026-05-28): 71.7%
+- L3/L2 (L2026-05-28 -> H2026-06-03): 97.4%
+- L4/L3 (H2026-06-03 -> L2026-07-27): 269.8%
+- L5/L4 (L2026-07-27 -> H2026-09-10): 86.0%
+- L6/L5 (H2026-09-10 -> L2026-09-29): 40.5%
 
 ## Daily — 60 phien gan nhat (date,O,H,L,C,V)
-260701,64.00,66.55,63.91,66.27,11.6M
-260702,66.27,66.64,65.91,65.91,5.7M
 260703,65.90,66.45,65.18,65.73,7.5M
 260706,65.82,67.27,65.36,66.36,11.2M
 260707,66.36,66.99,65.90,66.55,4.6M
@@ -205,9 +203,10 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 260923,66.60,67.00,66.10,66.10,3.6M
 260924,66.00,66.20,65.10,65.30,4.4M
 260925,65.50,65.90,64.60,64.70,3.5M
+260928,64.70,64.80,63.00,63.70,5.1M
+260929,63.70,64.10,63.10,63.20,3.1M
 
 ## Weekly — 52 tuan gan nhat (date,O,H,L,C,V)
-250926,90.96,91.14,86.43,86.53,58.7M
 251003,86.79,86.79,81.12,82.89,45.5M
 251010,83.68,85.99,82.97,85.29,32.0M
 251017,84.22,84.22,78.18,78.19,55.6M
@@ -259,6 +258,7 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 260911,66.36,68.00,65.45,66.09,32.6M
 260918,66.18,68.00,65.00,65.18,38.7M
 260925,66.50,67.00,64.60,64.70,24.8M
+260929,64.70,64.80,63.00,63.20,8.3M
 
 ## Monthly — 60 thang gan nhat (date,O,H,L,C,V)
 211029,42.28,46.19,42.05,44.10,47.8M
@@ -320,7 +320,7 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 260630,65.64,70.64,63.73,63.82,197.2M
 260731,64.00,67.27,55.91,61.00,179.2M
 260828,61.27,67.27,61.18,66.55,123.1M
-260925,66.36,68.00,64.60,64.70,103.7M
+260929,66.36,68.00,63.00,63.20,112.0M
 
 ## Gioi han
 - Pack nay CHI co du lieu gia (khong co EPS/BVPS/BCTC) — phan dinh gia Graham dung file rieng data/packs/{MA}-fund.md (T4b, doc tu file Excel Vietstock user upload).
