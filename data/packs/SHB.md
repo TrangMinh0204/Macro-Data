@@ -1,20 +1,20 @@
 ---
 ma: SHB
-ngay_du_lieu_gan_nhat: 2026-09-29
-so_phien_daily: 1237
+ngay_du_lieu_gan_nhat: 2026-09-30
+so_phien_daily: 1238
 ---
 
 # Price Pack — SHB
 
 ## Chi bao tinh san
-- MA20/50/200: 11.70 / 11.75 / 14.06
+- MA20/50/200: 11.66 / 11.73 / 14.04
 - RSI14: 39.3
-- Volume/MA20vol: 0.63x
+- Volume/MA20vol: 0.75x
 - 52w High/Low (dieu chinh): 18.18 / 11.10
 - Dinh/day 52w (CHUA dieu chinh, muc gia tam ly): 18.20 / 11.20
 - OBV: 2082754600 (huong 20 phien: giam)
 - VPT: 105720995 (huong 20 phien: giam)
-- MFI14: 32.5
+- MFI14: 32.9
 
 ## Cloudbank metrics (Bulkowski Ch.18)
 - 30-week SMA: 13.30 | Gia hien tai vs SMA: -13.90%
@@ -24,7 +24,7 @@ so_phien_daily: 1237
 ## Cup with Handle metrics (proxy)
 - Khoang cach toi 52w high: -37.03%
 - Do sau tu rim (dinh 90 phien gan nhat): -18.21%
-- Uptrend 6 thang truoc (proxy, ~190->90 phien truoc): 5.26%
+- Uptrend 6 thang truoc (proxy, ~190->90 phien truoc): 4.29%
 
 ## Swing points (ZigZag 5%) — 30 pivot gan nhat
 - 2024-10-01 H 8.37
@@ -67,7 +67,6 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 - L6/L5 (H2026-08-28 -> L2026-09-14): 80.0%
 
 ## Daily — 60 phien gan nhat (date,O,H,L,C,V)
-260703,13.75,13.80,13.55,13.65,26.5M
 260706,13.65,13.70,13.30,13.35,68.7M
 260707,13.40,13.45,13.20,13.40,47.9M
 260708,13.40,13.40,13.30,13.40,40.2M
@@ -127,6 +126,7 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 260925,11.65,11.65,11.45,11.60,37.8M
 260928,11.60,11.60,11.35,11.50,38.7M
 260929,11.50,11.55,11.35,11.45,26.4M
+260930,11.40,11.45,11.30,11.45,29.4M
 
 ## Weekly — 52 tuan gan nhat (date,O,H,L,C,V)
 251003,16.80,17.25,16.16,16.46,357.1M
@@ -180,7 +180,7 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 260911,12.15,12.15,11.50,11.55,201.0M
 260918,11.55,11.80,11.30,11.80,242.9M
 260925,11.75,11.80,11.45,11.60,157.5M
-260929,11.60,11.60,11.35,11.45,65.1M
+260930,11.60,11.60,11.30,11.45,94.6M
 
 ## Monthly — 60 thang gan nhat (date,O,H,L,C,V)
 211029,12.84,13.16,11.43,12.08,309.6M
@@ -242,7 +242,7 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 260630,13.70,14.15,13.45,13.55,1043.8M
 260731,13.55,13.95,11.10,11.50,1200.9M
 260828,11.55,12.25,11.40,12.20,1002.7M
-260929,12.05,12.15,11.30,11.45,758.1M
+260930,12.05,12.15,11.30,11.45,787.5M
 
 ## Gioi han
 - Pack nay CHI co du lieu gia (khong co EPS/BVPS/BCTC) — phan dinh gia Graham dung file rieng data/packs/{MA}-fund.md (T4b, doc tu file Excel Vietstock user upload).

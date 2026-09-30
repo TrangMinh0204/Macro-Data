@@ -154,6 +154,7 @@ vao dau pack cua ma tuong ung.
 - HDG 2015-03-19: High (4.2978) < max(Open,Close) (4.4486)
 - HHS 2025-05-07: High (11.4) < max(Open,Close) (11.45)
 - HHS 2019-08-07: Low (2.247) > min(Open,Close) (2.2171)
+- HNX-INDEX 2026-09-30: Low (269.81) > High (172.07)
 - HNX-INDEX 2026-09-29: High (172.27) < max(Open,Close) (271.26)
 - HNX-INDEX 2025-08-01: Low (262.88) > min(Open,Close) (255.74)
 - HNX-INDEX 2025-07-16: Low (239.78) > High (3)
