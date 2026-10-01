@@ -1,7 +1,7 @@
 ---
 ma: TMB
-ngay_du_lieu_gan_nhat: 2026-09-30
-so_phien_daily: 1641
+ngay_du_lieu_gan_nhat: 2026-10-01
+so_phien_daily: 1642
 ---
 
 # Price Pack — TMB
@@ -11,14 +11,14 @@ Phat hien dong O/H/L/C bat thuong tu nguon CafeF cho ma nay — KHONG dung cac n
 - 2025-05-05: Co gia <= 0 (O=66.2918 H=0 L=65.923 C=65.9277)
 
 ## Chi bao tinh san
-- MA20/50/200: 45.56 / 47.81 / 51.24
+- MA20/50/200: 45.31 / 47.64 / 51.18
 - RSI14: 8.2
-- Volume/MA20vol: 1.03x
+- Volume/MA20vol: 0.35x
 - 52w High/Low (dieu chinh): 61.73 / 41.00
 - Dinh/day 52w (CHUA dieu chinh, muc gia tam ly): 62.80 / 42.00
 - OBV: 1462967 (huong 20 phien: giam)
 - VPT: 169265 (huong 20 phien: giam)
-- MFI14: 6.2
+- MFI14: 6.1
 
 ## Cloudbank metrics (Bulkowski Ch.18)
 - 30-week SMA: 50.46 | Gia hien tai vs SMA: -16.76%
@@ -71,7 +71,6 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 - L6/L5 (H2026-03-31 -> L2026-09-28): 212.0%
 
 ## Daily — 60 phien gan nhat (date,O,H,L,C,V)
-260623,51.40,51.40,51.00,51.00,900
 260625,51.50,51.50,51.00,51.40,2K
 260626,51.00,51.30,51.00,51.30,600
 260629,51.40,51.40,50.80,51.30,2K
@@ -131,6 +130,7 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 260928,42.00,42.20,42.00,42.00,4K
 260929,41.60,42.00,41.00,42.00,6K
 260930,42.00,42.00,42.00,42.00,12K
+261001,42.00,42.00,42.00,42.00,4K
 
 ## Weekly — 52 tuan gan nhat (date,O,H,L,C,V)
 251003,58.31,58.69,57.46,57.94,22K
@@ -184,10 +184,9 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 260911,47.00,47.50,46.50,47.50,2K
 260917,47.50,47.50,47.00,47.50,9K
 260925,47.00,47.00,42.20,42.30,186K
-260930,42.00,42.20,41.00,42.00,22K
+261001,42.00,42.20,41.00,42.00,25K
 
 ## Monthly — 60 thang gan nhat (date,O,H,L,C,V)
-211029,16.27,20.77,16.12,17.98,407K
 211130,17.98,17.98,13.48,13.87,443K
 211231,13.79,14.41,12.17,14.34,153K
 220128,13.02,14.34,11.16,12.40,62K
@@ -247,6 +246,7 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 260731,51.50,51.90,48.00,48.80,50K
 260827,48.00,50.00,46.00,47.90,15K
 260930,47.00,47.90,41.00,42.00,221K
+261001,42.00,42.00,42.00,42.00,4K
 
 ## Gioi han
 - Pack nay CHI co du lieu gia (khong co EPS/BVPS/BCTC) — phan dinh gia Graham dung file rieng data/packs/{MA}-fund.md (T4b, doc tu file Excel Vietstock user upload).
