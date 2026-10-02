@@ -2,7 +2,7 @@
 
 - Trang thai lan chay gan nhat: **OK — da cache thanh cong**
 - Ngay du lieu muc tieu lan nay: 2026-10-01
-- Cache VNINDEX truoc lan chay nay: 2026-09-30
+- Cache VNINDEX truoc lan chay nay: 2026-10-01
 - Chi tiet: Coverage 100.0%, 76 file.
 
 Neu trang thai la PENDING, phien chat tiep theo nen doc file nay va
