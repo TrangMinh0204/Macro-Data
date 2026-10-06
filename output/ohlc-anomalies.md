@@ -25,7 +25,7 @@ vao dau pack cua ma tuong ung.
 - CTG 2015-03-19: High (7.3066) < max(Open,Close) (7.3861)
 - DBC 2019-08-07: High (5.2732) < max(Open,Close) (5.3197)
 - DCM 2015-04-01: High (6.4341) < max(Open,Close) (6.4818)
-- DGW 2019-09-16: Low (4.2014) > min(Open,Close) (4.1483)
+- DGW 2019-09-16: Low (4.1088) > min(Open,Close) (4.0569)
 - DIG 2019-09-16: Low (7.273) > min(Open,Close) (7.2211)
 - DIG 2019-09-04: High (7.3509) < max(Open,Close) (7.5068)
 - DIG 2015-03-20: High (4.5796) < max(Open,Close) (4.6517)
