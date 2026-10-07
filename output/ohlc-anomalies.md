@@ -626,6 +626,7 @@ vao dau pack cua ma tuong ung.
 - VIC 2009-02-24: High (1.391) < max(Open,Close) (1.4612)
 - VJC 2019-08-30: High (101.534) < max(Open,Close) (101.842)
 - VJC 2019-07-15: High (100.304) < max(Open,Close) (101.073)
+- VNINDEX 2026-10-07: Low (1743.24) > High (160.54)
 - VNINDEX 2026-06-08: Low (1879.31) > High (1822.95)
 - VNINDEX 2025-11-25: High (1660.36) < max(Open,Close) (1670.08)
 - VNINDEX 2025-05-08: High (1253.31) < max(Open,Close) (1269.8)
