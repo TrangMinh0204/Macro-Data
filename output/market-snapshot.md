@@ -1,39 +1,39 @@
 ---
-ngay_du_lieu: 2026-10-08
+ngay_du_lieu: 2026-10-09
 nguon: gia_dieu_chinh=OK, index=OK
 ---
 
-# Market Snapshot — 2026-10-08
+# Market Snapshot — 2026-10-09
 
-**VNINDEX**: 1,738.97 (-0.82%)
-**HNX-INDEX**: 256.22 (-1.39%)
-**VN30 (xap xi, TB gian don 30 ma, KHONG phai index chinh thuc vi thieu trong so free-float)**: -0.87%
+**VNINDEX**: 1,735.09 (-0.22%)
+**HNX-INDEX**: 261.60 (+2.10%)
+**VN30 (xap xi, TB gian don 30 ma, KHONG phai index chinh thuc vi thieu trong so free-float)**: -0.25%
 
 ## Do rong thi truong (ma tang/giam/dung)
-- HOSE: tang 181 / giam 423 / dung 92 (quet 2587 ma)
-- HNX: tang 76 / giam 76 / dung 40 (quet 379 ma)
-- UPCOM: tang 119 / giam 96 / dung 75 (quet 1127 ma)
+- HOSE: tang 240 / giam 350 / dung 100 (quet 2587 ma)
+- HNX: tang 61 / giam 73 / dung 67 (quet 379 ma)
+- UPCOM: tang 107 / giam 155 / dung 98 (quet 1127 ma)
 
 ## Top 10 khoi luong HOSE
-- SHB: 44,496,500 cp, gia 10.05
-- VIX: 31,025,100 cp, gia 11.30
-- HDB: 24,274,000 cp, gia 28.00
-- NVL: 23,227,200 cp, gia 10.25
-- PNJ: 21,727,200 cp, gia 18.25
-- SSI: 17,799,300 cp, gia 19.05
-- PVT: 13,543,600 cp, gia 25.55
-- TCB: 13,146,800 cp, gia 31.90
-- VPB: 13,070,200 cp, gia 23.45
-- HPG: 12,877,800 cp, gia 20.15
+- SHB: 128,335,400 cp, gia 10.00
+- NVL: 73,096,900 cp, gia 10.95
+- VIX: 45,714,300 cp, gia 11.65
+- HDB: 34,772,500 cp, gia 22.40
+- SSI: 26,053,200 cp, gia 19.00
+- VPB: 20,155,900 cp, gia 23.80
+- VND: 17,614,400 cp, gia 13.20
+- HPG: 15,779,800 cp, gia 20.10
+- MSB: 15,311,700 cp, gia 14.60
+- TCB: 15,207,700 cp, gia 32.35
 
 ## Tong khoi luong / gia tri toan thi truong
-- Tong KL: 658,988,100 cp
-- Tong GT (uoc tinh, don vi nghin dong x cp): 13,971,376,103
+- Tong KL: 917,879,400 cp
+- Tong GT (uoc tinh, don vi nghin dong x cp): 16,386,204,128
 
 ## Ro Vingroup (VIC, VHM, VRE, VPL) — theo doi song song VNINDEX
-- VIC: -0.87%
-- VHM: -3.38%
-- VRE: -0.65%
-- VPL: +0.88%
-- Trung binh gian don ro Vin: -1.00%
-- Khong co phan ky dang chu y voi VNINDEX.
+- VIC: -1.10%
+- VHM: +0.46%
+- VRE: +0.22%
+- VPL: +0.87%
+- Trung binh gian don ro Vin: +0.11%
+- ⚠️ CO PHAN KY: ro Vin va VNINDEX nguoc chieu nhau (lech 0.34pp) — kiem tra kha nang 'xanh vo do long'.
