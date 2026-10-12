@@ -1,39 +1,39 @@
 ---
-ngay_du_lieu: 2026-10-09
+ngay_du_lieu: 2026-10-12
 nguon: gia_dieu_chinh=OK, index=OK
 ---
 
-# Market Snapshot — 2026-10-09
+# Market Snapshot — 2026-10-12
 
-**VNINDEX**: 1,735.09 (-0.22%)
-**HNX-INDEX**: 261.60 (+2.10%)
-**VN30 (xap xi, TB gian don 30 ma, KHONG phai index chinh thuc vi thieu trong so free-float)**: -0.25%
+**VNINDEX**: 1,720.98 (-0.81%)
+**HNX-INDEX**: 264.69 (+1.18%)
+**VN30 (xap xi, TB gian don 30 ma, KHONG phai index chinh thuc vi thieu trong so free-float)**: -0.26%
 
 ## Do rong thi truong (ma tang/giam/dung)
-- HOSE: tang 240 / giam 350 / dung 100 (quet 2587 ma)
-- HNX: tang 61 / giam 73 / dung 67 (quet 379 ma)
-- UPCOM: tang 107 / giam 155 / dung 98 (quet 1127 ma)
+- HOSE: tang 285 / giam 294 / dung 111 (quet 2587 ma)
+- HNX: tang 70 / giam 64 / dung 59 (quet 379 ma)
+- UPCOM: tang 120 / giam 121 / dung 68 (quet 1127 ma)
 
 ## Top 10 khoi luong HOSE
-- SHB: 128,335,400 cp, gia 10.00
-- NVL: 73,096,900 cp, gia 10.95
-- VIX: 45,714,300 cp, gia 11.65
-- HDB: 34,772,500 cp, gia 22.40
-- SSI: 26,053,200 cp, gia 19.00
-- VPB: 20,155,900 cp, gia 23.80
-- VND: 17,614,400 cp, gia 13.20
-- HPG: 15,779,800 cp, gia 20.10
-- MSB: 15,311,700 cp, gia 14.60
-- TCB: 15,207,700 cp, gia 32.35
+- SHB: 40,288,700 cp, gia 10.40
+- HPG: 31,127,600 cp, gia 20.70
+- VPB: 30,769,100 cp, gia 24.40
+- TCB: 21,292,500 cp, gia 32.60
+- VIX: 20,155,000 cp, gia 11.70
+- PNJ: 19,080,300 cp, gia 18.15
+- NVL: 18,672,700 cp, gia 11.15
+- HDB: 15,602,100 cp, gia 22.60
+- SSI: 11,163,300 cp, gia 19.05
+- MBB: 9,895,100 cp, gia 19.15
 
 ## Tong khoi luong / gia tri toan thi truong
-- Tong KL: 917,879,400 cp
-- Tong GT (uoc tinh, don vi nghin dong x cp): 16,386,204,128
+- Tong KL: 590,876,800 cp
+- Tong GT (uoc tinh, don vi nghin dong x cp): 11,622,863,367
 
 ## Ro Vingroup (VIC, VHM, VRE, VPL) — theo doi song song VNINDEX
-- VIC: -1.10%
-- VHM: +0.46%
-- VRE: +0.22%
-- VPL: +0.87%
-- Trung binh gian don ro Vin: +0.11%
-- ⚠️ CO PHAN KY: ro Vin va VNINDEX nguoc chieu nhau (lech 0.34pp) — kiem tra kha nang 'xanh vo do long'.
+- VIC: -2.88%
+- VHM: -3.18%
+- VRE: -1.73%
+- VPL: -2.23%
+- Trung binh gian don ro Vin: -2.50%
+- Khong co phan ky dang chu y voi VNINDEX.
