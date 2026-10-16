@@ -1,7 +1,7 @@
 ---
 ma: TVD
-ngay_du_lieu_gan_nhat: 2026-10-15
-so_phien_daily: 3409
+ngay_du_lieu_gan_nhat: 2026-10-16
+so_phien_daily: 3410
 ---
 
 # Price Pack — TVD
@@ -12,13 +12,13 @@ Phat hien dong O/H/L/C bat thuong tu nguon CafeF cho ma nay — KHONG dung cac n
 
 ## Chi bao tinh san
 - MA20/50/200: 8.87 / 8.76 / 9.38
-- RSI14: 66.7
-- Volume/MA20vol: 0.74x
+- RSI14: 61.5
+- Volume/MA20vol: 1.14x
 - 52w High/Low (dieu chinh): 12.65 / 8.30
 - Dinh/day 52w (CHUA dieu chinh, muc gia tam ly): 12.70 / 8.40
 - OBV: 19170226 (huong 20 phien: giam)
 - VPT: 2569390 (huong 20 phien: tang)
-- MFI14: 57.1
+- MFI14: 57.6
 
 ## Cloudbank metrics (Bulkowski Ch.18)
 - 30-week SMA: 9.17 | Gia hien tai vs SMA: -0.79%
@@ -71,7 +71,6 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 - L6/L5 (L2026-09-25 -> H2026-10-08): 85.7%
 
 ## Daily — 60 phien gan nhat (date,O,H,L,C,V)
-260721,8.70,8.70,8.50,8.70,31K
 260722,8.70,8.80,8.60,8.70,35K
 260723,8.60,8.70,8.40,8.60,44K
 260724,8.60,8.70,8.50,8.60,9K
@@ -131,6 +130,7 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 261013,8.80,9.00,8.70,9.00,11K
 261014,9.00,9.20,9.00,9.00,67K
 261015,9.00,9.10,9.00,9.10,28K
+261016,9.10,9.30,9.00,9.10,45K
 
 ## Weekly — 52 tuan gan nhat (date,O,H,L,C,V)
 251017,9.49,9.49,9.30,9.39,55K
@@ -184,7 +184,7 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 260925,9.00,9.00,8.60,8.60,164K
 261002,8.60,8.90,8.60,8.80,106K
 261009,8.80,9.30,8.50,9.10,348K
-261015,9.00,9.20,8.70,9.10,124K
+261016,9.00,9.30,8.70,9.10,169K
 
 ## Monthly — 60 thang gan nhat (date,O,H,L,C,V)
 211130,11.13,12.66,9.38,10.11,10.2M
@@ -246,7 +246,7 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 260731,9.20,9.30,8.40,8.80,625K
 260828,8.80,8.90,8.30,8.40,369K
 260930,8.40,9.40,8.40,8.80,681K
-261015,8.70,9.30,8.50,9.10,504K
+261016,8.70,9.30,8.50,9.10,549K
 
 ## Gioi han
 - Pack nay CHI co du lieu gia (khong co EPS/BVPS/BCTC) — phan dinh gia Graham dung file rieng data/packs/{MA}-fund.md (T4b, doc tu file Excel Vietstock user upload).
