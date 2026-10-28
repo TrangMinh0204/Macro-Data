@@ -1,7 +1,7 @@
 ---
 ma: MBB
-ngay_du_lieu_gan_nhat: 2026-10-27
-so_phien_daily: 3737
+ngay_du_lieu_gan_nhat: 2026-10-28
+so_phien_daily: 3738
 ---
 
 # Price Pack — MBB
@@ -13,24 +13,24 @@ Phat hien dong O/H/L/C bat thuong tu nguon CafeF cho ma nay — KHONG dung cac n
 - 2019-09-04: High (5.3544) < max(Open,Close) (5.3893)
 
 ## Chi bao tinh san
-- MA20/50/200: 19.46 / 19.92 / 20.54
-- RSI14: 60.8
-- Volume/MA20vol: 0.42x
+- MA20/50/200: 19.46 / 19.92 / 20.53
+- RSI14: 66.7
+- Volume/MA20vol: 0.66x
 - 52w High/Low (dieu chinh): 23.63 / 17.78
 - Dinh/day 52w (CHUA dieu chinh, muc gia tam ly): 29.00 / 18.90
-- OBV: 3186551630 (huong 20 phien: tang)
-- VPT: 73303673 (huong 20 phien: tang)
-- MFI14: 49.2
+- OBV: 3194159230 (huong 20 phien: tang)
+- VPT: 73323030 (huong 20 phien: tang)
+- MFI14: 54.9
 
 ## Cloudbank metrics (Bulkowski Ch.18)
-- 30-week SMA: 20.09 | Gia hien tai vs SMA: -2.21%
-- ATH (theo lich su co du lieu): 23.63 | Drawdown tu ATH: -16.83%
-- ATL: 1.13 | Hoi phuc tu ATL: 1639.40%
+- 30-week SMA: 20.10 | Gia hien tai vs SMA: -1.97%
+- ATH (theo lich su co du lieu): 23.63 | Drawdown tu ATH: -16.62%
+- ATL: 1.13 | Hoi phuc tu ATL: 1643.83%
 
 ## Cup with Handle metrics (proxy)
-- Khoang cach toi 52w high: -16.83%
-- Do sau tu rim (dinh 90 phien gan nhat): -6.65%
-- Uptrend 6 thang truoc (proxy, ~190->90 phien truoc): 5.84%
+- Khoang cach toi 52w high: -16.62%
+- Do sau tu rim (dinh 90 phien gan nhat): -6.41%
+- Uptrend 6 thang truoc (proxy, ~190->90 phien truoc): 7.41%
 
 ## Swing points (ZigZag 5%) — 30 pivot gan nhat
 - 2024-05-31 L 11.37
@@ -73,7 +73,6 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 - L6/L5 (L2026-10-08 -> H2026-10-21): 51.2%
 
 ## Daily — 60 phien gan nhat (date,O,H,L,C,V)
-260731,19.03,19.28,18.74,18.74,12.1M
 260803,18.95,20.03,18.95,19.99,22.7M
 260804,20.08,20.37,19.99,20.33,17.0M
 260805,20.41,20.41,20.03,20.24,14.0M
@@ -133,6 +132,7 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 261023,19.80,19.90,19.65,19.80,10.9M
 261026,19.80,19.85,19.55,19.55,9.8M
 261027,19.60,19.70,19.50,19.65,4.8M
+261028,19.65,19.70,19.50,19.70,7.6M
 
 ## Weekly — 52 tuan gan nhat (date,O,H,L,C,V)
 251031,19.66,19.74,18.54,18.90,170.3M
@@ -186,7 +186,7 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 261009,19.10,19.30,18.65,19.05,61.7M
 261016,19.05,20.10,19.00,19.85,75.9M
 261023,19.90,20.05,19.50,19.80,50.5M
-261027,19.80,19.85,19.50,19.65,14.6M
+261028,19.80,19.85,19.50,19.70,22.2M
 
 ## Monthly — 60 thang gan nhat (date,O,H,L,C,V)
 211130,10.34,11.37,10.12,10.48,337.0M
@@ -248,7 +248,7 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 260731,20.26,20.94,17.78,18.74,325.9M
 260828,18.95,21.20,18.95,21.05,255.1M
 260930,21.00,21.00,19.50,19.65,229.2M
-261027,19.70,20.10,18.65,19.65,222.2M
+261028,19.70,20.10,18.65,19.70,229.9M
 
 ## Gioi han
 - Pack nay CHI co du lieu gia (khong co EPS/BVPS/BCTC) — phan dinh gia Graham dung file rieng data/packs/{MA}-fund.md (T4b, doc tu file Excel Vietstock user upload).
