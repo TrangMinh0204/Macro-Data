@@ -1,7 +1,7 @@
 ---
 ma: NDN
-ngay_du_lieu_gan_nhat: 2026-10-30
-so_phien_daily: 3873
+ngay_du_lieu_gan_nhat: 2026-11-03
+so_phien_daily: 3875
 ---
 
 # Price Pack — NDN
@@ -12,27 +12,26 @@ Phat hien dong O/H/L/C bat thuong tu nguon CafeF cho ma nay — KHONG dung cac n
 - 2018-07-31: Low (6.0741) > High (5.9484)
 
 ## Chi bao tinh san
-- MA20/50/200: 7.65 / 7.88 / 9.24
-- RSI14: 60.0
-- Volume/MA20vol: 0.46x
-- 52w High/Low (dieu chinh): 12.00 / 7.02
+- MA20/50/200: 7.64 / 7.86 / 9.21
+- RSI14: 64.3
+- Volume/MA20vol: 0.40x
+- 52w High/Low (dieu chinh): 11.63 / 7.02
 - Dinh/day 52w (CHUA dieu chinh, muc gia tam ly): 12.60 / 7.20
-- OBV: 120394586 (huong 20 phien: giam)
-- VPT: 6046880 (huong 20 phien: tang)
-- MFI14: 50.9
+- OBV: 120336786 (huong 20 phien: giam)
+- VPT: 6046129 (huong 20 phien: tang)
+- MFI14: 55.7
 
 ## Cloudbank metrics (Bulkowski Ch.18)
-- 30-week SMA: 8.89 | Gia hien tai vs SMA: -13.41%
-- ATH (theo lich su co du lieu): 21.19 | Drawdown tu ATH: -63.67%
-- ATL: 0.77 | Hoi phuc tu ATL: 905.88%
+- 30-week SMA: 8.83 | Gia hien tai vs SMA: -13.95%
+- ATH (theo lich su co du lieu): 21.19 | Drawdown tu ATH: -64.14%
+- ATL: 0.77 | Hoi phuc tu ATL: 892.82%
 
 ## Cup with Handle metrics (proxy)
-- Khoang cach toi 52w high: -35.83%
-- Do sau tu rim (dinh 90 phien gan nhat): -23.47%
-- Uptrend 6 thang truoc (proxy, ~190->90 phien truoc): 0.00%
+- Khoang cach toi 52w high: -34.66%
+- Do sau tu rim (dinh 90 phien gan nhat): -24.47%
+- Uptrend 6 thang truoc (proxy, ~190->90 phien truoc): 2.68%
 
 ## Swing points (ZigZag 5%) — 30 pivot gan nhat
-- 2024-06-28 L 10.06
 - 2024-07-09 H 11.03
 - 2024-08-05 L 7.61
 - 2024-08-21 H 8.58
@@ -61,19 +60,18 @@ Phat hien dong O/H/L/C bat thuong tu nguon CafeF cho ma nay — KHONG dung cac n
 - 2026-09-15 L 7.75
 - 2026-09-21 H 8.40
 - 2026-10-14 L 7.20
-- 2026-10-21 H 8.00 (chua xac nhan)
+- 2026-10-21 H 8.00
+- 2026-11-02 L 7.60 (chua xac nhan)
 
 ## Ma tran ty le Fibonacci (7 pivot gan nhat)
 Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6/127.2/161.8% de nhan dien harmonic (viec nay thuoc skill, khong phai script).
-- L2/L1 (L2026-03-23 -> H2026-05-14): 145.5%
-- L3/L2 (H2026-05-14 -> L2026-09-15): 193.8%
-- L4/L3 (L2026-09-15 -> H2026-09-21): 22.6%
-- L5/L4 (H2026-09-21 -> L2026-10-14): 185.7%
-- L6/L5 (L2026-10-14 -> H2026-10-21): 66.7%
+- L2/L1 (H2026-05-14 -> L2026-09-15): 193.8%
+- L3/L2 (L2026-09-15 -> H2026-09-21): 22.6%
+- L4/L3 (H2026-09-21 -> L2026-10-14): 185.7%
+- L5/L4 (L2026-10-14 -> H2026-10-21): 66.7%
+- L6/L5 (H2026-10-21 -> L2026-11-02): 50.0%
 
 ## Daily — 60 phien gan nhat (date,O,H,L,C,V)
-260805,8.49,8.58,8.31,8.58,183K
-260806,8.49,8.58,8.40,8.49,159K
 260807,8.49,8.49,8.31,8.49,158K
 260810,8.49,8.49,8.31,8.49,184K
 260811,8.49,8.49,8.31,8.40,264K
@@ -132,9 +130,10 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 261028,7.80,7.80,7.60,7.80,80K
 261029,7.60,7.80,7.50,7.70,70K
 261030,7.60,7.70,7.50,7.70,40K
+261102,7.50,7.60,7.30,7.60,58K
+261103,7.50,7.60,7.40,7.60,31K
 
 ## Weekly — 52 tuan gan nhat (date,O,H,L,C,V)
-251031,11.82,12.00,10.89,11.63,1.5M
 251107,11.63,11.63,10.71,10.98,1.4M
 251114,10.89,10.98,10.43,10.98,1.1M
 251121,10.98,10.98,10.43,10.71,1.2M
@@ -186,9 +185,9 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 261016,7.50,7.50,7.20,7.50,296K
 261023,7.50,8.00,7.40,7.90,493K
 261030,7.80,7.90,7.50,7.70,315K
+261103,7.50,7.60,7.30,7.60,88K
 
 ## Monthly — 60 thang gan nhat (date,O,H,L,C,V)
-211130,19.15,21.19,16.78,18.04,113.2M
 211231,17.89,18.04,14.73,15.44,55.9M
 220128,15.44,15.52,10.87,11.82,26.5M
 220228,11.82,15.29,11.82,14.73,20.2M
@@ -248,6 +247,7 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 260828,8.31,8.58,7.85,7.85,2.9M
 260930,7.85,8.90,7.02,7.80,2.2M
 261030,7.80,8.00,7.20,7.70,1.8M
+261103,7.50,7.60,7.30,7.60,88K
 
 ## Gioi han
 - Pack nay CHI co du lieu gia (khong co EPS/BVPS/BCTC) — phan dinh gia Graham dung file rieng data/packs/{MA}-fund.md (T4b, doc tu file Excel Vietstock user upload).
