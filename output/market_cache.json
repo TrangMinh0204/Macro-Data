@@ -1,11 +1,11 @@
 {
  "gold": {
-  "xau_usd": 4113.7,
-  "xag_usd": 53.13,
+  "xau_usd": 4079.1,
+  "xag_usd": 52.53,
   "sjc_vnd": null,
   "sjc_buy": null,
   "source": "gold-api.com",
-  "cached_at": "2026-11-10 10:15 ICT"
+  "cached_at": "2026-11-10 19:16 ICT"
  },
  "vnindex": {
   "vnindex": 350.0,
