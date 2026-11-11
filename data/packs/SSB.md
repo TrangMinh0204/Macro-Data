@@ -1,20 +1,20 @@
 ---
 ma: SSB
-ngay_du_lieu_gan_nhat: 2026-11-10
-so_phien_daily: 1405
+ngay_du_lieu_gan_nhat: 2026-11-11
+so_phien_daily: 1406
 ---
 
 # Price Pack — SSB
 
 ## Chi bao tinh san
-- MA20/50/200: 15.58 / 17.54 / 15.34
-- RSI14: 32.8
-- Volume/MA20vol: 0.99x
+- MA20/50/200: 15.55 / 17.50 / 15.34
+- RSI14: 34.9
+- Volume/MA20vol: 1.00x
 - 52w High/Low (dieu chinh): 24.80 / 13.23
 - Dinh/day 52w (CHUA dieu chinh, muc gia tam ly): 24.10 / 14.00
 - OBV: 161152400 (huong 20 phien: giam)
 - VPT: 4468520 (huong 20 phien: giam)
-- MFI14: 36.6
+- MFI14: 36.4
 
 ## Cloudbank metrics (Bulkowski Ch.18)
 - 30-week SMA: 15.87 | Gia hien tai vs SMA: -4.85%
@@ -67,7 +67,6 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 - L6/L5 (H2026-10-23 -> L2026-11-06): 185.0%
 
 ## Daily — 60 phien gan nhat (date,O,H,L,C,V)
-260814,15.15,15.35,14.80,15.05,2.4M
 260817,15.05,15.25,15.00,15.20,2.1M
 260818,15.25,15.30,14.85,15.05,1.9M
 260819,15.10,15.10,14.75,15.05,2.4M
@@ -127,6 +126,7 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 261106,14.90,15.00,14.75,14.80,2.0M
 261109,14.75,14.95,14.30,14.80,2.7M
 261110,14.90,15.20,14.80,15.10,2.2M
+261111,15.10,15.10,14.85,15.10,2.2M
 
 ## Weekly — 52 tuan gan nhat (date,O,H,L,C,V)
 251114,14.31,14.31,13.77,14.10,15.9M
@@ -180,7 +180,7 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 261023,16.15,16.65,15.45,16.65,10.7M
 261030,16.55,16.60,15.00,15.05,11.8M
 261106,14.75,15.30,14.70,14.80,11.0M
-261110,14.75,15.20,14.30,15.10,4.9M
+261111,14.75,15.20,14.30,15.10,7.2M
 
 ## Monthly — 60 thang gan nhat (date,O,H,L,C,V)
 211231,18.08,21.72,17.06,21.58,52.0M
@@ -242,7 +242,7 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 260828,15.55,17.10,14.75,17.10,45.9M
 260930,17.15,24.80,17.10,18.25,73.4M
 261030,18.10,18.45,15.00,15.05,50.0M
-261110,14.75,15.30,14.30,15.10,16.0M
+261111,14.75,15.30,14.30,15.10,18.2M
 
 ## Gioi han
 - Pack nay CHI co du lieu gia (khong co EPS/BVPS/BCTC) — phan dinh gia Graham dung file rieng data/packs/{MA}-fund.md (T4b, doc tu file Excel Vietstock user upload).
