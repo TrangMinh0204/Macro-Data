@@ -1,39 +1,39 @@
 ---
-ngay_du_lieu: 2026-11-13
+ngay_du_lieu: 2026-11-16
 nguon: gia_dieu_chinh=OK, index=OK
 ---
 
-# Market Snapshot — 2026-11-13
+# Market Snapshot — 2026-11-16
 
-**VNINDEX**: 1,734.93 (+0.01%)
-**HNX-INDEX**: 254.98 (-0.64%)
-**VN30 (xap xi, TB gian don 30 ma, KHONG phai index chinh thuc vi thieu trong so free-float)**: +0.06%
+**VNINDEX**: 1,736.89 (+0.11%)
+**HNX-INDEX**: 254.91 (-0.03%)
+**VN30 (xap xi, TB gian don 30 ma, KHONG phai index chinh thuc vi thieu trong so free-float)**: -0.19%
 
 ## Do rong thi truong (ma tang/giam/dung)
-- HOSE: tang 212 / giam 404 / dung 122 (quet 2692 ma)
-- HNX: tang 48 / giam 83 / dung 62 (quet 379 ma)
-- UPCOM: tang 130 / giam 123 / dung 111 (quet 1127 ma)
+- HOSE: tang 199 / giam 443 / dung 100 (quet 2709 ma)
+- HNX: tang 71 / giam 74 / dung 56 (quet 379 ma)
+- UPCOM: tang 101 / giam 112 / dung 88 (quet 1126 ma)
 
 ## Top 10 khoi luong HOSE
-- VIX: 26,722,600 cp, gia 13.05
-- SHB: 24,348,700 cp, gia 10.90
-- POW: 18,532,100 cp, gia 13.05
-- MSB: 15,330,800 cp, gia 16.40
-- FPT: 14,372,200 cp, gia 50.10
-- NVL: 14,271,700 cp, gia 10.40
-- HDB: 13,233,800 cp, gia 22.60
-- GEX: 12,117,100 cp, gia 21.50
-- TPB: 11,749,400 cp, gia 12.95
-- KDH: 11,140,000 cp, gia 15.70
+- SHB: 28,168,700 cp, gia 10.80
+- VIX: 26,982,000 cp, gia 12.80
+- TPB: 15,377,900 cp, gia 12.65
+- CII: 14,207,600 cp, gia 13.45
+- SSI: 13,684,800 cp, gia 19.85
+- NVL: 11,400,200 cp, gia 10.35
+- HDB: 11,198,800 cp, gia 22.30
+- HPG: 10,212,600 cp, gia 21.05
+- DXG: 10,202,000 cp, gia 10.95
+- KDH: 9,687,300 cp, gia 15.10
 
 ## Tong khoi luong / gia tri toan thi truong
-- Tong KL: 609,678,800 cp
-- Tong GT (uoc tinh, don vi nghin dong x cp): 10,762,671,610
+- Tong KL: 502,516,300 cp
+- Tong GT (uoc tinh, don vi nghin dong x cp): 9,224,223,030
 
 ## Ro Vingroup (VIC, VHM, VRE, VPL) — theo doi song song VNINDEX
-- VIC: +0.00%
-- VHM: +0.00%
-- VRE: +0.00%
+- VIC: +2.06%
+- VHM: +0.48%
+- VRE: -0.21%
 - VPL: +0.00%
-- Trung binh gian don ro Vin: +0.00%
+- Trung binh gian don ro Vin: +0.58%
 - Khong co phan ky dang chu y voi VNINDEX.
