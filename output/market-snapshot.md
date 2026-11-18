@@ -1,39 +1,39 @@
 ---
-ngay_du_lieu: 2026-11-17
+ngay_du_lieu: 2026-11-18
 nguon: gia_dieu_chinh=OK, index=OK
 ---
 
-# Market Snapshot — 2026-11-17
+# Market Snapshot — 2026-11-18
 
-**VNINDEX**: 1,726.72 (-0.59%)
-**HNX-INDEX**: 248.60 (-2.48%)
-**VN30 (xap xi, TB gian don 30 ma, KHONG phai index chinh thuc vi thieu trong so free-float)**: -0.75%
+**VNINDEX**: 1,703.01 (-1.37%)
+**HNX-INDEX**: 242.73 (-2.36%)
+**VN30 (xap xi, TB gian don 30 ma, KHONG phai index chinh thuc vi thieu trong so free-float)**: -1.44%
 
 ## Do rong thi truong (ma tang/giam/dung)
-- HOSE: tang 194 / giam 449 / dung 125 (quet 2736 ma)
-- HNX: tang 42 / giam 76 / dung 57 (quet 379 ma)
-- UPCOM: tang 86 / giam 116 / dung 88 (quet 1126 ma)
+- HOSE: tang 97 / giam 629 / dung 76 (quet 2742 ma)
+- HNX: tang 25 / giam 116 / dung 49 (quet 379 ma)
+- UPCOM: tang 71 / giam 142 / dung 85 (quet 1126 ma)
 
 ## Top 10 khoi luong HOSE
-- VIX: 25,020,800 cp, gia 12.85
-- SHB: 24,149,100 cp, gia 10.80
-- POW: 16,711,300 cp, gia 13.25
-- SSI: 15,271,200 cp, gia 19.85
-- GEX: 13,275,900 cp, gia 20.50
-- HPG: 12,663,600 cp, gia 21.00
-- KDH: 12,387,800 cp, gia 15.65
-- MBB: 11,184,400 cp, gia 18.95
-- BSR: 11,105,200 cp, gia 24.25
-- HDB: 10,952,200 cp, gia 22.40
+- SHB: 30,961,400 cp, gia 10.45
+- VIX: 29,169,100 cp, gia 12.65
+- HPG: 21,967,200 cp, gia 20.45
+- POW: 21,630,600 cp, gia 13.40
+- KDH: 19,650,600 cp, gia 16.15
+- FPT: 16,204,800 cp, gia 46.95
+- VPB: 15,003,500 cp, gia 21.00
+- SSI: 14,344,600 cp, gia 19.55
+- MBB: 14,052,000 cp, gia 18.80
+- TCB: 14,036,700 cp, gia 20.75
 
 ## Tong khoi luong / gia tri toan thi truong
-- Tong KL: 567,082,400 cp
-- Tong GT (uoc tinh, don vi nghin dong x cp): 10,670,131,391
+- Tong KL: 661,713,500 cp
+- Tong GT (uoc tinh, don vi nghin dong x cp): 12,161,119,578
 
 ## Ro Vingroup (VIC, VHM, VRE, VPL) — theo doi song song VNINDEX
-- VIC: +0.00%
-- VHM: -1.12%
-- VRE: -1.65%
-- VPL: +0.53%
-- Trung binh gian don ro Vin: -0.56%
+- VIC: -1.21%
+- VHM: -1.62%
+- VRE: +0.00%
+- VPL: +0.00%
+- Trung binh gian don ro Vin: -0.71%
 - Khong co phan ky dang chu y voi VNINDEX.
