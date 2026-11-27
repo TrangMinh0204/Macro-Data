@@ -1,7 +1,7 @@
 ---
 ma: VRE
-ngay_du_lieu_gan_nhat: 2026-11-23
-so_phien_daily: 2252
+ngay_du_lieu_gan_nhat: 2026-11-27
+so_phien_daily: 2255
 ---
 
 # Price Pack — VRE
@@ -12,27 +12,26 @@ Phat hien dong O/H/L/C bat thuong tu nguon CafeF cho ma nay — KHONG dung cac n
 - 2019-08-09: Low (34.2376) > min(Open,Close) (33.5133)
 
 ## Chi bao tinh san
-- MA20/50/200: 23.90 / 24.02 / 26.45
-- RSI14: 55.2
-- Volume/MA20vol: 1.02x
+- MA20/50/200: 23.77 / 23.88 / 26.39
+- RSI14: 49.0
+- Volume/MA20vol: 1.20x
 - 52w High/Low (dieu chinh): 38.15 / 20.90
 - Dinh/day 52w (CHUA dieu chinh, muc gia tam ly): 38.55 / 21.30
-- OBV: 605676570 (huong 20 phien: giam)
-- VPT: 24961101 (huong 20 phien: giam)
-- MFI14: 35.9
+- OBV: 606191970 (huong 20 phien: giam)
+- VPT: 25013639 (huong 20 phien: giam)
+- MFI14: 37.9
 
 ## Cloudbank metrics (Bulkowski Ch.18)
-- 30-week SMA: 26.20 | Gia hien tai vs SMA: -10.51%
-- ATH (theo lich su co du lieu): 47.09 | Drawdown tu ATH: -50.20%
-- ATL: 15.55 | Hoi phuc tu ATL: 50.81%
+- 30-week SMA: 26.21 | Gia hien tai vs SMA: -9.59%
+- ATH (theo lich su co du lieu): 47.09 | Drawdown tu ATH: -49.67%
+- ATL: 15.55 | Hoi phuc tu ATL: 52.42%
 
 ## Cup with Handle metrics (proxy)
-- Khoang cach toi 52w high: -38.53%
-- Do sau tu rim (dinh 90 phien gan nhat): -13.15%
-- Uptrend 6 thang truoc (proxy, ~190->90 phien truoc): 22.00%
+- Khoang cach toi 52w high: -37.88%
+- Do sau tu rim (dinh 90 phien gan nhat): -12.22%
+- Uptrend 6 thang truoc (proxy, ~190->90 phien truoc): 23.03%
 
 ## Swing points (ZigZag 5%) — 30 pivot gan nhat
-- 2025-09-23 L 27.33
 - 2025-10-16 H 41.92
 - 2025-11-03 L 30.28
 - 2025-11-04 H 32.35
@@ -61,20 +60,18 @@ Phat hien dong O/H/L/C bat thuong tu nguon CafeF cho ma nay — KHONG dung cac n
 - 2026-10-14 L 22.40
 - 2026-10-22 H 25.30
 - 2026-11-02 L 22.95
-- 2026-11-12 H 24.30 (chua xac nhan)
+- 2026-11-12 H 24.30
+- 2026-11-26 L 23.05 (chua xac nhan)
 
 ## Ma tran ty le Fibonacci (7 pivot gan nhat)
 Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6/127.2/161.8% de nhan dien harmonic (viec nay thuoc skill, khong phai script).
-- L2/L1 (L2026-08-14 -> H2026-09-07): 122.0%
-- L3/L2 (H2026-09-07 -> L2026-10-14): 150.8%
-- L4/L3 (L2026-10-14 -> H2026-10-22): 63.0%
-- L5/L4 (H2026-10-22 -> L2026-11-02): 81.0%
-- L6/L5 (L2026-11-02 -> H2026-11-12): 57.4%
+- L2/L1 (H2026-09-07 -> L2026-10-14): 150.8%
+- L3/L2 (L2026-10-14 -> H2026-10-22): 63.0%
+- L4/L3 (H2026-10-22 -> L2026-11-02): 81.0%
+- L5/L4 (L2026-11-02 -> H2026-11-12): 57.4%
+- L6/L5 (H2026-11-12 -> L2026-11-26): 92.6%
 
 ## Daily — 60 phien gan nhat (date,O,H,L,C,V)
-260827,25.60,26.80,25.60,26.00,8.2M
-260828,26.20,26.75,25.90,26.10,8.3M
-260903,26.10,26.65,25.85,26.30,5.0M
 260904,26.20,27.00,26.20,26.50,7.4M
 260907,26.50,27.95,26.50,27.00,11.6M
 260908,27.00,27.25,26.00,26.20,5.6M
@@ -132,6 +129,9 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 261119,23.70,23.80,23.40,23.50,2.2M
 261120,23.05,23.55,23.00,23.50,3.0M
 261123,23.50,23.60,23.00,23.45,3.2M
+261125,23.50,23.85,23.25,23.45,4.3M
+261126,23.10,23.30,22.80,23.05,3.4M
+261127,23.00,23.70,23.00,23.70,3.9M
 
 ## Weekly — 52 tuan gan nhat (date,O,H,L,C,V)
 251128,31.19,34.19,31.14,33.08,62.9M
@@ -185,7 +185,7 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 261106,24.05,24.70,22.85,23.75,16.6M
 261113,23.75,24.65,23.50,24.30,14.7M
 261120,24.00,24.70,23.00,23.50,16.8M
-261123,23.50,23.60,23.00,23.45,3.2M
+261127,23.50,23.85,22.80,23.70,14.8M
 
 ## Monthly — 60 thang gan nhat (date,O,H,L,C,V)
 211231,28.83,30.81,26.95,29.07,170.4M
@@ -247,7 +247,7 @@ Ty le do dai chan sau / chan lien truoc — doi chieu voi 38.2/50/61.8/78.6/88.6
 260828,24.80,26.80,23.65,26.10,116.1M
 260930,26.10,27.95,24.05,24.35,97.1M
 261030,24.35,25.50,22.15,24.05,72.5M
-261123,24.05,24.70,22.85,23.45,51.3M
+261127,24.05,24.70,22.80,23.70,62.9M
 
 ## Gioi han
 - Pack nay CHI co du lieu gia (khong co EPS/BVPS/BCTC) — phan dinh gia Graham dung file rieng data/packs/{MA}-fund.md (T4b, doc tu file Excel Vietstock user upload).
